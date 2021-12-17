@@ -1,0 +1,9 @@
+-W
+-Wall
+-Wextra
+-Wpedantic
+-pedantic
+-pedantic-errors
+-Wshadow
+-Wno-missings-bracers
+-std=c++17
