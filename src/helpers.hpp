@@ -44,7 +44,7 @@ template<class T, class U>
 struct IsSubsetOf;
 
 template<template<class...> class T, template<class...> class U, class... Ts>
-struct IsSubsetOf<T<>, U<Ts...>> final : public std::true_type {  };
+struct IsSubsetOf<T<>, U<Ts...>> : std::true_type {  };
 
 template<template<class...> class T, class... Types, class U>
 struct IsSubsetOf<T<Types...>, U>
@@ -232,5 +232,13 @@ MakeEmptyArgs(const std::index_sequence<Is...>&)
 {
     return std::tuple{ ((void)Is, Elements_t<>{})... };
 }
+
+template<class Owner_t>
+struct Key_t
+{
+private:
+friend Owner_t;
+    explicit constexpr Key_t() = default;
+};
 
 } // namespace ECS
