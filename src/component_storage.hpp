@@ -60,6 +60,14 @@ private:
 
 public:
 
+    template<class Component_t>
+    using iterator = typename ComponentVector_t<Component_t>::iterator;
+
+    template<class Component_t>
+    using const_iterator = typename ComponentVector_t<Component_t>::const_iterator;
+
+public:
+
     explicit ComponentStorage_t()
         : mComponentTable { ComponentVector_t<Components_t>{  }... }
     {
@@ -125,6 +133,43 @@ public:
                                   &ComponentStorage_t::GetRequiredComponent<RequiredComponent_t>,
                                   cmp_id);
     }
+
+    template<class RequiredComponent_t> constexpr auto
+    begin() const -> const_iterator<RequiredComponent_t>
+    {
+        return GetRequiredComponentVector<RequiredComponent_t>().begin();
+    }
+
+    template<class RequiredComponent_t> constexpr auto
+    begin() -> iterator<RequiredComponent_t>
+    {
+        return GetRequiredComponentVector<RequiredComponent_t>().begin();
+    }
+
+    template<class RequiredComponent_t> constexpr auto
+    cbegin() -> const_iterator<RequiredComponent_t>
+    {
+        return GetRequiredComponentVector<RequiredComponent_t>().cbegin();
+    }
+
+    template<class RequiredComponent_t> constexpr auto
+    end() const -> const_iterator<RequiredComponent_t>
+    {
+        return GetRequiredComponentVector<RequiredComponent_t>().end();
+    }
+
+    template<class RequiredComponent_t> constexpr auto
+    end() -> iterator<RequiredComponent_t>
+    {
+        return GetRequiredComponentVector<RequiredComponent_t>().end();
+    }
+
+    template<class RequiredComponent_t> constexpr auto
+    cend() -> const_iterator<RequiredComponent_t>
+    {
+        return GetRequiredComponentVector<RequiredComponent_t>().cend();
+    }
+
 };
 
 } // namespace ECS

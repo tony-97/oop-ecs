@@ -76,16 +76,19 @@ protected:
     auto end()    const { return mComps.end(); }
     auto cend()   const { return mComps.cend(); }
 
+public:
+
+    virtual ~EntityBase_t() = default;
+    constexpr explicit EntityBase_t() = default;
+
 private:
     std::unordered_map<ComponentTypeID_t, ComponentID_t> mComps {  };
 };
 
-template<class EntMan_t, class EntityType_t>
+template<class EntMan_t>
 struct Entity_t final : public EntityBase_t,
                         public Uncopyable_t
 {
-    using type  = EntityType_t;
-
     friend EntMan_t;
     using ConstructorKey_t = typename EntMan_t::EntityCreationKey_t;
 
