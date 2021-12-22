@@ -30,7 +30,7 @@ protected:
     {
         Optional_t<ComponentID_t> cmp_id {  };
 
-        auto ite = mComps.find(cmp_tp_id);
+        auto ite { mComps.find(cmp_tp_id) };
         if (ite != mComps.cend()) {
             cmp_id.emplace(ite->second);
         }
@@ -51,7 +51,7 @@ protected:
         if (!FindRequiredComponentID(cmp_tp_id)) {
             std::cerr << "[ERROR]: Required component ID not found." << std::endl
                       << "ComponentTypeID_t: " << cmp_tp_id << std::endl;
-            std::exit(EXIT_FAILURE);           
+            std::exit(EXIT_FAILURE);
         }
 
         return const_cast<EntityBase_t*>(this)->mComps[cmp_tp_id];
@@ -69,12 +69,12 @@ protected:
         mComps[cmp_tp_id] = cmp_id;
     }
 
-    auto begin()        { return mComps.begin(); }
-    auto begin()  const { return mComps.begin(); }
+    auto begin()        { return mComps.begin();  }
+    auto begin()  const { return mComps.begin();  }
     auto cbegin() const { return mComps.cbegin(); }
-    auto end()          { return mComps.end(); }
-    auto end()    const { return mComps.end(); }
-    auto cend()   const { return mComps.cend(); }
+    auto end()          { return mComps.end();    }
+    auto end()    const { return mComps.end();    }
+    auto cend()   const { return mComps.cend();   }
 
 public:
 
@@ -82,6 +82,7 @@ public:
     constexpr explicit EntityBase_t() = default;
 
 private:
+
     std::unordered_map<ComponentTypeID_t, ComponentID_t> mComps {  };
 };
 

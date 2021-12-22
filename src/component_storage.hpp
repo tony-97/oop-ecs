@@ -4,9 +4,10 @@
 #include <variant>
 #include <array>
 
+#include <sequence.hpp>
+
 #include "internal_component.hpp"
 #include "type_aliases.hpp"
-#include "type_list.hpp"
 #include "helpers.hpp"
 
 namespace ECS
@@ -41,20 +42,20 @@ private:
 
     template<class RequiredComponent_t> constexpr auto
     GetRequiredComponentVector()
-    ->ComponentVector_t<RequiredComponent_t>&
+    -> ComponentVector_t<RequiredComponent_t>&
     {
         return SameAsConstMemFunc(this, &ComponentStorage_t::GetRequiredComponentVector<RequiredComponent_t>);
     }
 
     constexpr static void CheckIfComponentsAreUnique()
     {
-        static_assert(AreUnique_v<Components_t...>, "Components must be unique.");
+        static_assert(TMPL::AreUnique_v<Components_t...>, "Components must be unique.");
     }
 
     template<class Component_t>
     constexpr static void CheckIfComponentExists()
     {
-        static_assert(IsOneOf_v<Component_t, Components_t...>,
+        static_assert(TMPL::IsOneOf_v<Component_t, Components_t...>,
                       "The requiered component does not exists in this instance.");
     }
 
@@ -79,7 +80,7 @@ public:
     -> ComponentID_t
     {
         auto& cmp_vec { GetRequiredComponentVector<RequiredComponent_t>() };
-        auto cmp_id { cmp_vec.size() };
+        const auto cmp_id { cmp_vec.size() };
         cmp_vec.emplace_back(eid, std::forward<Args_t>(args)...);
 
         return cmp_id;
@@ -89,14 +90,14 @@ public:
     GetRequiredComponentTypeIndex()
     -> ComponentTypeID_t
     {
-        return TMPL::IndexOf_v<RequiredComponent_t, ComponentList_t>;
+        return TMPL::IndexOf_v<RequiredComponent_t, Components_t...>;
     }
 
     template<class RequiredComponent_t> constexpr auto
     RemoveRequiredComponent(ComponentID_t cmp_id)
     -> EntityID_t
     {
-        auto cmp_tp_idx { GetRequiredComponentTypeIndex<RequiredComponent_t>() };
+        constexpr auto cmp_tp_idx { GetRequiredComponentTypeIndex<RequiredComponent_t>() };
         return RemoveRequiredComponent(cmp_tp_idx, cmp_id);
     }
 
@@ -108,10 +109,10 @@ public:
         auto remove_cmp
         {
             [&cmp_id](auto& cmp_vec) -> EntityID_t {
-                auto  it   = std::next(cmp_vec.begin(), cmp_id);
+                auto&  cmp = cmp_vec[cmp_id];
                 auto& last = cmp_vec.back();
-                *it = std::move(last);
-                return it->mEntityID;
+                cmp = std::move(last);
+                return cmp.mEntityID;
             }
         };
 

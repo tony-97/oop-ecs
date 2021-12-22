@@ -1,5 +1,7 @@
 #pragma once
 
+#include "helpers.hpp"
+#include <type_traits>
 #include <utility>
 #include <functional>
 
@@ -57,7 +59,7 @@ struct Arguments_t
     : Wrapper<T>, IMPL::Arguments_t<std::index_sequence_for<Args_t...>, Args_t...>
 {  };
 
-template<class T, class... Args_t>
+template<class T, class... Args_t, std::enable_if_t<ECS::IsConstructible_v<T, Args_t...>, bool> = true>
 Arguments_t(Wrapper<T>,Args_t&&...) -> Arguments_t<T, Args_t&&...>;
 
 template<class Args_t>
