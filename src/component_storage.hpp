@@ -93,7 +93,7 @@ public:
         return TMPL::IndexOf_v<RequiredComponent_t, Components_t...>;
     }
 
-    template<class RequiredComponent_t> constexpr auto
+    template<class RequiredComponent_t> [[nodiscard]] constexpr auto
     RemoveRequiredComponent(ComponentID_t cmp_id)
     -> EntityID_t
     {
@@ -101,7 +101,7 @@ public:
         return RemoveRequiredComponent(cmp_tp_idx, cmp_id);
     }
 
-    constexpr auto
+    [[nodiscard]] constexpr auto
     RemoveRequiredComponent(ComponentTypeID_t cmp_tp_id, ComponentID_t cmp_id)
     -> EntityID_t
     {
@@ -112,11 +112,26 @@ public:
                 auto&  cmp = cmp_vec[cmp_id];
                 auto& last = cmp_vec.back();
                 cmp = std::move(last);
+                cmp_vec.pop_back();
                 return cmp.mEntityID;
             }
         };
 
         return std::visit(remove_cmp, variant_vec);
+    }
+
+    constexpr auto
+    SetEntityID(ComponentTypeID_t cmp_tp_id, ComponentID_t cmp_id, EntityID_t eid)
+    -> void
+    {
+        auto& variant_vec { mComponentTable[cmp_tp_id] };
+        auto set_ent_id
+        {
+            [&cmp_id, &eid](auto& cmp_vec) {
+                cmp_vec[cmp_id].mEntityID = eid;
+            }
+        };
+        std::visit(set_ent_id, variant_vec);
     }
 
     template<class RequiredComponent_t> constexpr auto

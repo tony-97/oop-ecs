@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <stack>
 
 #include "helpers.hpp"
 #include "type_aliases.hpp"
@@ -14,11 +15,11 @@ namespace ECS
 
 namespace Seq = TMPL::Sequence;
 
-template<class... SystemsSignature_t>
-using ComponentExtractor_t = Seq::UniqueTypes_t<Seq::SeqCat_t<SystemsSignature_t...>>;
+template<class... SystemsSignatures_t>
+using ComponentExtractor_t = Seq::UniqueTypes_t<Seq::SeqCat_t<SystemsSignatures_t...>>;
 
-// SystemSignature_t is a variadic template argument that each one is a list of components
-template<class... SystemSignature_t>
+// SystemsSignatures_t is a variadic template argument that each one is a list of components
+template<class... SystemsSignatures_t>
 struct EntityManager_t
 {
 private:
@@ -27,7 +28,7 @@ private:
 
     using OwnEntitity_t = Entity_t<Self_t>;
 
-    using ComponentList_t = ComponentExtractor_t<SystemSignature_t...>;
+    using ComponentList_t = ComponentExtractor_t<SystemsSignatures_t...>;
     using ComponentWarehouse_t = ComponentStorage_t<ComponentList_t>;
 
     using EntityVector_t = Vector_t<std::unique_ptr<OwnEntitity_t>>;
@@ -54,7 +55,7 @@ private:
             auto end { ent_man.mComponents.template end<Head_t>() };
             for (; it != end; ++it) {
                 auto& [ent_id, cmp] { *it };
-                const auto& ent { ent_man.GetRequiredEntity(ent_id) };
+                const auto& ent { ent_man.GetEntityByID(ent_id) };
                 callback(cmp, ent_man.template GetRequiredComponent<Tail_t>(ent)..., ent);
             }
         }
@@ -122,25 +123,62 @@ private:
                                   ent);
     }
 
-    constexpr auto GetRequiredEntity(EntityID_t eid) const -> const OwnEntitity_t&
+    constexpr auto GetEntityByID(EntityID_t eid) const -> const OwnEntitity_t&
     {
         return *mEntitites[eid];
     }
 
-    constexpr auto GetRequiredEntity(EntityID_t eid) -> OwnEntitity_t&
+    constexpr auto GetEntityByID(EntityID_t eid) -> OwnEntitity_t&
     {
         return *mEntitites[eid];
+    }
+
+    constexpr static auto CheckIfSignaturesAreUnique() -> void
+    {
+        static_assert(TMPL::AreUnique_v<SystemsSignatures_t...>,
+                      "Entities signatures must be unique.");
+        static_assert(TMPL::AreUnique_v<TMPL::TypeAt_t<0, SystemsSignatures_t>...>,
+                      "Main components must be unique.");
+    }
+
+    constexpr auto RemoveAllComponentsFromEntity(OwnEntitity_t& ent) -> void
+    {
+        for (auto [cmp_tp_id, cmp_id] : ent) {
+            auto eid { mComponents.RemoveRequiredComponent(cmp_tp_id, cmp_id) };
+            auto& ent_upd { GetEntityByID(eid) };
+            ent_upd.UpdateComponentID(cmp_tp_id, cmp_id);
+        }       
+    }
+
+    constexpr auto
+    UpdateComponentsEntityIDFromEntity(OwnEntitity_t& ent, EntityID_t new_ent_id)
+    -> void
+    {
+        for (auto [cmp_tp_id, cmp_id] : ent) {
+            mComponents.SetEntityID(cmp_tp_id, cmp_id, new_ent_id);
+        }
+    }
+
+    constexpr auto DestroyEntity(OwnEntitity_t& ent) -> void
+    {
+        auto& last_ent { *mEntitites.back() };
+        RemoveAllComponentsFromEntity(ent);
+        UpdateComponentsEntityIDFromEntity(last_ent, ent.GetEntityID());
+        ent = std::move(last_ent);
+        mEntitites.pop_back();
     }
 
 public:
 
     using EntityCreationKey_t = Key_t<Self_t>;
 
-    explicit EntityManager_t() = default;
+    explicit EntityManager_t()
+    {
+        CheckIfSignaturesAreUnique();
+    }
 
     template<class... Signatures_t , class... ComponentsArgs_t> constexpr auto
-    CreateEntityForSystems(ComponentsArgs_t&&... args)
-    -> OwnEntitity_t& 
+    CreateEntityForSystems(ComponentsArgs_t&&... args) -> OwnEntitity_t&
     {
         static_assert(TMPL::AreUnique_v<typename std::remove_reference_t<ComponentsArgs_t>::For_type...>,
                       "Component arguments must be unique.");
@@ -154,6 +192,19 @@ public:
 
         Seq::ForEach_t<RemainingComponents_t>::Do(ComponentCreator_t{ *this }, ent);
         return ent;
+    }
+
+    constexpr auto MarkEntityForDestroy(const OwnEntitity_t& ent) -> void
+    {
+        mDeadEntities.emplace(ent.GetEntityID());
+    }
+
+    constexpr auto GCEntities() -> void
+    {
+        while (not mDeadEntities.empty()) {
+            DestroyEntity(GetEntityByID(mDeadEntities.top()));
+            mDeadEntities.pop();
+        }
     }
 
     template<class Signature_t, class Callable_t> constexpr auto
@@ -174,6 +225,7 @@ private:
 
     static constexpr inline Key_t<Self_t> constructor_key {  };
 
+    std::stack<EntityID_t> mDeadEntities {  };
     EntityVector_t mEntitites {  };
     ComponentWarehouse_t mComponents {  };
 };
