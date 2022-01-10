@@ -36,7 +36,11 @@ SameAsConstMemFunc(This_t& obj,
 {
     using Return_t = NonConst_t<CReturn_t>;
     using CThis_t = const This_t;
-    return const_cast<Return_t>((const_cast<CThis_t&>(obj).*mem_fn)(std::forward<Args_t>(args)...));
+    if constexpr (not std::is_void_v<Return_t>) {
+        return const_cast<Return_t>((const_cast<CThis_t&>(obj).*mem_fn)(std::forward<Args_t>(args)...));
+    } else {
+        (const_cast<CThis_t&>(obj).*mem_fn)(std::forward<Args_t>(args)...);
+    }
 }
 
 template<class CReturn_t,
@@ -66,6 +70,29 @@ struct Uncopyable_t
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+// Convert tuple
+///////////////////////////////////////////////////////////////////////////////
+
+template<class Types_t>
+struct TupleConverter_t;
+
+template<template<class...> class TList_t, class... Ts>
+struct TupleConverter_t<TList_t<Ts...>>
+{
+    template<class Tuple_t>
+    constexpr static auto Convert(Tuple_t&& tup)
+    {
+        return std::tuple{ std::get<Ts>(std::forward<Tuple_t>(tup))... };
+    }
+};
+
+template<class... Ts, class Tuple_t>
+constexpr auto ConvertTo(Tuple_t&& tup)
+{
+    return std::tuple { std::get<Ts>(tup)... };
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // key for managers
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -78,21 +105,38 @@ friend Owner_t;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// IsConstructible
+// identifier for managers
 ///////////////////////////////////////////////////////////////////////////////
 
-template <class...>
-using void_t = void;
+template<class Manager_t, class T, class ID_t = std::size_t>
+class Identifier_t
+{
+    friend Manager_t;
+public:
+    using type = T;
+    using id_type = ID_t;
+
+    constexpr ID_t GetID() const { return mID; }
+private:
+    constexpr explicit Identifier_t(typename Manager_t::ConstructorKey_t, ID_t id)
+        : mID { id } {  }
+
+    const ID_t mID {  };
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// IsConstructible
+///////////////////////////////////////////////////////////////////////////////
 
 template <class, class T, class... Args>
 struct IsConstructibleIMPL : std::false_type {  };
 
 template <class T, class... Args>
-struct IsConstructibleIMPL<void_t<decltype(T{std::declval<Args>()...})>,
+struct IsConstructibleIMPL<std::void_t<decltype(T{std::declval<Args>()...})>,
                            T, Args...> : std::true_type {};
 
 template <class T, class... Args>
-using IsConstructible = IsConstructibleIMPL<void_t<>, T, Args...>;
+using IsConstructible = IsConstructibleIMPL<std::void_t<>, T, Args...>;
 
 template <class T, class... Args>
 constexpr static inline auto IsConstructible_v { IsConstructible<T, Args...>::value };
