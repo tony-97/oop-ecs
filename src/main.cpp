@@ -18,9 +18,9 @@ struct PhysicsComponent_t
     int vx, vy;
 };
 
-constexpr auto rendereable_printer [[maybe_unused]] = [](auto& ren, auto& pos, auto& ent) {
-    std::cout << "Found entity ID:     " << ent.GetID() << std::endl;
-    std::cout << "Entity address:      " << (void*)&ent << std::endl;
+constexpr auto rendereable_printer [[maybe_unused]] = [](auto& ren, auto& pos/*, auto& ent*/) {
+    //std::cout << "Found entity ID:     " << ent.GetID() << std::endl;
+    //std::cout << "Entity address:      " << (void*)&ent << std::endl;
     std::cout << "RenderComponent:     " << ren.c << std::endl;
     std::cout << "PositionComponent_t: " << "X: " << pos.x << " Y: " << pos.y << std::endl;
 };
@@ -48,7 +48,7 @@ int main()
     ecs_man.CreateEntity<Rendereable_t>(ren_args, pos_args);
     ecs_man.CreateEntity<Movable_t>(pos_args, phy_args);
 
-    ecs_man.ForEachEntity<Rendereable_t>([](){});
+    ecs_man.ForEachEntity<Rendereable_t>(rendereable_printer);
 
     return 0;
 }

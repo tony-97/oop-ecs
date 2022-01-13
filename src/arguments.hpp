@@ -48,7 +48,7 @@ apply(Callable_t&& cb, Args_t&& args, std::index_sequence<Indexs...>)
 template<class T>
 struct Wrapper
 {
-    using For_type = T;
+    using type = T;
 };
 
 template<class T>

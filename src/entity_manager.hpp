@@ -7,38 +7,36 @@
 namespace ECS
 {
 
-// EntitySignatures_t is a variadic template argument that each one is a list of components
-template<class... EntitySignatures_t>
-struct EntityManager_t final : SoA_t<Entity_t<EntitySignatures_t>...>, Uncopyable_t
+// Entities is a variadic template argument that each one is a list of components
+template<class... Entities>
+struct EntityManager_t final : SoA_t<Entities...>, Uncopyable_t
 {
 public:
 
                       using Self_t           = EntityManager_t;
-                      using Base_t           = SoA_t<Entity_t<EntitySignatures_t>...>;
+                      using Base_t           = SoA_t<Entities...>;
                       using ConstructorKey_t = Key_t<Self_t>;
-    template<class T> using EntityID_t       = Identifier_t<Self_t, T>;
+    template<class T> using EntityID_t       = ID_t<T, IndexSize_t>;
 
-    explicit EntityManager_t() : Base_t{  }
+    constexpr explicit EntityManager_t() : Base_t{  }
     {
-        ((void)EntitySignatures_t{  }, ...) ;
+        ((void)Entities{  }, ...) ;
     }
 
     template<class RequiredEntity_t, class... ComponentIDs_t> constexpr auto
-    CreateEntity(ComponentIDs_t&&... ids)
+    Create(ComponentIDs_t&&... ids)
     {
-        EntityID_t<RequiredEntity_t> id {
-            constructor_key,
-            Base_t::template size<RequiredEntity_t>() };
+        EntityID_t<RequiredEntity_t> ent_id { Base_t::template size<RequiredEntity_t>() };
+
         Base_t::template emplace_back<RequiredEntity_t>(ids...);
 
-        return id;
+        return ent_id;
     }
 
 private:
 
     constexpr static inline ConstructorKey_t constructor_key {  };
 
-    using Base_t::data;
     using Base_t::push_back;
     using Base_t::emplace_back;
     using Base_t::reserve;
@@ -47,4 +45,3 @@ private:
 };
 
 } // namespace ECS
-

@@ -3,6 +3,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "sequence.hpp"
+
 namespace ECS
 {
 
@@ -73,24 +75,31 @@ struct Uncopyable_t
 // Convert tuple
 ///////////////////////////////////////////////////////////////////////////////
 
-template<class Types_t>
-struct TupleConverter_t;
-
-template<template<class...> class TList_t, class... Ts>
-struct TupleConverter_t<TList_t<Ts...>>
+struct TupleConverter_t
 {
-    template<class Tuple_t>
-    constexpr static auto Convert(Tuple_t&& tup)
+    template<class... Ts, class Tuple_t>
+    constexpr auto operator()(Tuple_t&& tup)
     {
-        return std::tuple{ std::get<Ts>(std::forward<Tuple_t>(tup))... };
+        return std::tuple { std::get<Ts>(std::forward<Tuple_t>(tup))... };
     }
 };
 
-template<class... Ts, class Tuple_t>
-constexpr auto ConvertTo(Tuple_t&& tup)
+template<class DestTuple_t, class SrcTuple_t>
+constexpr auto ConvertTo(SrcTuple_t&& tup)
 {
-    return std::tuple { std::get<Ts>(tup)... };
+    return TMPL::Sequence::Unpacker_t<DestTuple_t>::Call(TupleConverter_t{  }, std::forward<SrcTuple_t>(tup));
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// ID
+///////////////////////////////////////////////////////////////////////////////
+template<class T, class U>
+struct ID_t
+{
+    using type    = T;
+    using id_type = U;
+    U mID {  };
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // key for managers
