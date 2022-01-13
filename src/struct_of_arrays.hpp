@@ -26,7 +26,7 @@ public:
     template<class Type_t> using reverse_iterator       = typename Vector_t<Type_t>::reverse_iterator;
     template<class Type_t> using const_reverse_iterator = typename Vector_t<Type_t>::const_reverse_iterator;
 
-    using TypeFields = std::array<std::variant<Vector_t<Ts>...>, sizeof...(Ts)>;
+    using TypeFields = std::tuple<Vector_t<Ts>...>;
 
     constexpr explicit SoA_t() : mTypeTable { Vector_t<Ts>{  }... }
     {
@@ -99,8 +99,7 @@ private:
     GetRequiredVector() const -> const Vector_t<RequiredType_t>&
     {
         CheckIfTypeExists<RequiredType_t>();
-        constexpr auto index { get_type_index<RequiredType_t>() };
-        return *std::get_if<Vector_t<RequiredType_t>>(&mTypeTable[index]);
+        return std::get<Vector_t<RequiredType_t>>(mTypeTable);
     }
 
     template<class RequiredType_t> constexpr auto
