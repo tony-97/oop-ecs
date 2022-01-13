@@ -47,6 +47,7 @@ int main()
     ecs_man.CreateEntity<Rendereable_t>(ren_args);
     ecs_man.CreateEntity<Rendereable_t>(ren_args, pos_args);
     ecs_man.CreateEntity<Movable_t>(pos_args, phy_args);
+    ecs_man.CreateEntity<BasicCharacter_t>(Args::Arguments_t{ Args::Wrapper_v<RenderComponent_t>, 'a' });
 
     ecs_man.ForEachEntity<Rendereable_t>(rendereable_printer);
 
