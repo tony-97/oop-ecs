@@ -36,6 +36,13 @@ public:
     constexpr explicit Entity_t(IDs_t&&... ids)   : mComponentIDs { ids... } {  }
     constexpr explicit Entity_t(Entity_t&& other) : mComponentIDs { std::move(other.mComponentIDs) } {  }
 
+    constexpr Entity_t& operator=(Entity_t&& other)
+    {
+        mComponentIDs = other.mComponentIDs;
+
+        return *this;
+    }
+
     template<class Component_t>
     constexpr auto GetComponentID() const { return std::get<ID_t<Component_t, IndexSize_t>>(mComponentIDs); } 
 

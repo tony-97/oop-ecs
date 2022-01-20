@@ -1,5 +1,6 @@
 #pragma once
 
+#include "helpers.hpp"
 #include "struct_of_arrays.hpp"
 #include "entity.hpp"
 #include <tuple>
@@ -26,7 +27,8 @@ public:
     template<class RequiredEntity_t, class... ComponentIDs_t> constexpr auto
     Create(ComponentIDs_t&&... ids)
     {
-        EntityID_t<RequiredEntity_t> ent_id { Base_t::template size<RequiredEntity_t>() };
+        EntityID_t<RequiredEntity_t> ent_id {
+            Base_t::template size<RequiredEntity_t>() };
 
         Base_t::template emplace_back<RequiredEntity_t>(ids...);
 
@@ -35,9 +37,8 @@ public:
 
 private:
 
-    constexpr static inline ConstructorKey_t constructor_key {  };
-
     using Base_t::push_back;
+    using Base_t::emplace;
     using Base_t::emplace_back;
     using Base_t::reserve;
     using Base_t::shrink_to_fit;

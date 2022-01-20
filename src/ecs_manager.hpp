@@ -1,5 +1,7 @@
+#include <iterator>
 #include <tmpl.hpp>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #include "arguments.hpp"
@@ -55,6 +57,9 @@ struct Derived_t : RawDerived<std::conjunction_v<IsBase<Ts>...>, Ts...> {  };
 template<class... EntitySignatures_t>
 using ComponentsFrom_t = Seq::UniqueTypes_t<Seq::SeqCat_t<typename EntitySignatures_t::type...>>;
 
+template<class Obj_t, class T>
+using AddConstIf_t = std::conditional_t<std::is_const_v<std::remove_reference_t<Obj_t>>, std::add_const_t<T>, T>;
+
 template<class... EntitySignatures_t>
 struct ECSManager_t
 {
@@ -66,34 +71,42 @@ private:
         template<class EntitySignature_t, class Callback_t, class ECSMan_t>
         constexpr auto operator()(Callback_t&& cb, ECSMan_t&& ecs_man) const -> void
         {
+            using RequiredEntity_t = Entity_t<EntitySignature_t>;
             if constexpr (TMPL::IsSubsetOf_v<typename SystemSignature_t::type,
                                              typename EntitySignature_t::type>) {
-                auto it { ecs_man.mEntities.template begin<Entity_t<EntitySignature_t>>() };
-                auto end { ecs_man.mEntities.template end<Entity_t<EntitySignature_t>>() };
-                // TODO: iterate with rbegin and when delete a entity just swap with the end
-                for (; it != end; ++it) {
-                    std::apply(cb, ecs_man.template GetArgumentsFor<SystemSignature_t>(*it));
+                auto i { ecs_man.mEntityMan.template size<RequiredEntity_t>() };
+                while (i--) {
+                    ProxyEntity<EntitySignature_t> prx_ent { constructor_key, i };
+                    std::apply(cb, ecs_man.template GetArgumentsFor<SystemSignature_t>(prx_ent));
                 }
             }
         }
     };
 
-    struct GetArguments_t
+    struct ArgumentsGetter_t
     {
-        template<class... Args_t, class Ent_t, class ECSMan_t>
-        constexpr auto operator()(Ent_t&& ent, ECSMan_t&& ecs_man) const
+        template<class... Args_t, class PrxEnt_t, class ECSMan_t>
+        constexpr auto operator()(const PrxEnt_t prx_ent, ECSMan_t&& ecs_man) const
         {
-            return std::forward_as_tuple(ecs_man.GetComponent(ent.template GetComponentID<Args_t>())...);
+            const auto& ent { ecs_man.template GetEntity(prx_ent) };
+            return std::tuple<AddConstIf_t<ECSMan_t, Args_t>&..., PrxEnt_t>{
+                ecs_man.GetComponent(ent.template GetComponentID<Args_t>())...,
+                prx_ent };
         }
     };
 
     struct ComponentCreator_t
     {
-        template<class... Components_t, class ECSMan_t> constexpr auto
-        operator()(ECSMan_t& ecs_man) const
+    private:
+        ECSManager_t& mECSMan {  };
+    public:
+        constexpr explicit ComponentCreator_t(ECSManager_t& ecs_man)
+            : mECSMan { ecs_man } {  }
+
+        template<class... Components_t> constexpr auto operator()() const
         {
             return std::tuple {
-                ecs_man.mComponents.template Create<Components_t>()... };
+                mECSMan.mComponentMan.template Create<Components_t>()... };
         }
     };
 
@@ -105,7 +118,7 @@ private:
 
         auto cmp_creator {
             [&](auto&&... args) {
-                return mComponents.template Create<RequieredComponent_t>
+                return mComponentMan.template Create<RequieredComponent_t>
                     (std::forward<decltype(args)>(args)...);
             }
         };
@@ -113,40 +126,44 @@ private:
         return Args::apply(cmp_creator, std::forward<ComponentArgs_t>(arg));
     }
 
-    template<class CmpID_t, class Cmp = typename std::remove_reference_t<CmpID_t>::type>
-    constexpr auto GetComponent(CmpID_t&& cmp_id) const -> const Cmp&
+    template<class CmpID_t, class Cmp = typename CmpID_t::type>
+    constexpr auto GetComponent(const CmpID_t cmp_id) const -> const Cmp&
     {
-        return mComponents.template operator[]<ComponentWrapper<Cmp>>(cmp_id.mID).mSelf;
+        return mComponentMan.template operator[]<ComponentWrapper<Cmp>>(cmp_id.mID).mSelf;
     }
 
-    template<class CmpID_t, class Cmp = typename std::remove_reference_t<CmpID_t>::type>
-    constexpr auto GetComponent(CmpID_t&& cmp_id) -> Cmp&
+    template<class CmpID_t, class Cmp = typename CmpID_t::type>
+    constexpr auto GetComponent(const CmpID_t cmp_id) -> Cmp&
     {
-        return SameAsConstMemFunc(this, &ECSManager_t::GetComponent<CmpID_t, Cmp>, std::forward<CmpID_t>(cmp_id));
+        return SameAsConstMemFunc(this, &ECSManager_t::GetComponent<CmpID_t, Cmp>, cmp_id);
     }
 
-    template<class Signature_t, class Ent_t>
-    constexpr auto GetArgumentsFor(Ent_t&& ent)
+    template<class PrxEnt_t>
+    constexpr auto GetEntity(const PrxEnt_t prx_ent) const -> const Entity_t<typename PrxEnt_t::type>&
     {
-        return Seq::Unpacker_t<Signature_t>::Call(GetArguments_t{  }, std::forward<Ent_t>(ent), *this);
+        return mEntityMan.template operator[]<Entity_t<typename PrxEnt_t::type>>(prx_ent.mID);
     }
 
-    template<class Ent_t>
-    constexpr auto GetComponents(Ent_t&& ent) const
+    template<class PrxEnt_t>
+    constexpr auto GetEntity(const PrxEnt_t prx_ent) -> Entity_t<typename PrxEnt_t::type>&
     {
-        return std::apply([&](auto&&... cmp_ids) {
-                    return std::forward_as_tuple
-                    (GetComponent(std::forward<decltype(cmp_ids)>(cmp_ids))...);
-                }, ent.GetComponentIDs());
+        return SameAsConstMemFunc(this, &ECSManager_t::GetEntity<PrxEnt_t>, prx_ent);
     }
 
-    template<class Ent_t>
-    constexpr auto GetComponents(Ent_t&& ent)
+    template<class Signature_t, class PrxEnt_t>
+    constexpr auto GetArgumentsFor(const PrxEnt_t ent_id) const
     {
-        return std::apply([&](auto&&... cmp_ids) {
-                    return std::forward_as_tuple
-                    (GetComponent(std::forward<decltype(cmp_ids)>(cmp_ids))...);
-                }, ent.GetComponentIDs());
+        return Seq::Unpacker_t<Signature_t>::Call(ArgumentsGetter_t{  },
+                                                  ent_id,
+                                                  *this);
+    }
+
+    template<class Signature_t, class PrxEnt_t>
+    constexpr auto GetArgumentsFor(const PrxEnt_t ent_id)
+    {
+        return Seq::Unpacker_t<Signature_t>::Call(ArgumentsGetter_t{  },
+                                                  ent_id,
+                                                  *this);
     }
 
 public:
@@ -156,14 +173,10 @@ public:
     using ComponentMan_t  = ComponentManager_t<ComponentList_t>;
     using EntityMan_t     = EntityManager_t<Entity_t<EntitySignatures_t>...>;
 
-    template<class T>
-    using ComponentID_t = typename ComponentMan_t::template ComponentID_t<T>;
-
-    template<class T>
-    using EntityID_t    = typename EntityMan_t::template EntityID_t<T>;
+    template<class T> using ProxyEntity = Identifier_t<ECSManager_t, T>;
 
     template<class EntitySignature_t, class... Arguments_t> constexpr auto
-    CreateEntity(Arguments_t&&... args)
+    CreateEntity(Arguments_t&&... args) -> ProxyEntity<EntitySignature_t>
     {
         using RequiredEntity_t = Entity_t<EntitySignature_t>;
         using ArgsTypes = TMPL::TypeList_t<typename std::remove_reference_t<Arguments_t>::type...>;
@@ -173,18 +186,44 @@ public:
         static_assert(TMPL::IsSubsetOf_v<ArgsTypes, RequiredComponents_t>,
                       "Components arguments does not match the requiered components");
 
-        auto entity_creator {
+        auto create_entity {
             [&](auto&&... ids) {
-                return mEntities.template
+                return mEntityMan.template
                     Create<RequiredEntity_t>(std::forward<decltype(ids)>(ids)...);
             }
         };
 
-        return std::apply(entity_creator,
-                ConvertTo<typename RequiredEntity_t::ComponentIDs_t>(std::tuple_cat(std::tuple{ CreateComponent(std::forward<Arguments_t>(args))... },
-                                         Seq::Unpacker_t<RemainingComponents_t>::Call(ComponentCreator_t{  }, *this)
-                                         ))
-                          );
+        using ComponentIDs_t = typename RequiredEntity_t::ComponentIDs_t;
+
+        auto create_components { 
+            [&]() {
+                return ConvertTo<ComponentIDs_t>(
+                        std::tuple_cat(std::tuple{
+                            CreateComponent(std::forward<Arguments_t>(args))...
+                            },
+                            Seq::Unpacker_t<RemainingComponents_t>::Call(ComponentCreator_t{ *this }))
+                        );
+            }
+        };
+
+        return ProxyEntity<EntitySignature_t>{
+            constructor_key, std::apply(create_entity, create_components()).mID };
+    }
+
+    template<class PrxEnt_t>
+    void Destroy(const PrxEnt_t prx_ent)
+    {
+        using RequiredEntity_t = Entity_t<typename PrxEnt_t::type>;
+        auto& ent  { GetEntity(prx_ent) };
+        auto& last { mEntityMan.template back<RequiredEntity_t>() };
+        ent = std::move(last);
+        mEntityMan.template pop_back<RequiredEntity_t>();
+    }
+
+    template<class ToEnt_t, class FromEnt_t>
+    void TransformTo(FromEnt_t&& ent)
+    {
+        TMPL::Sequence::RemoveTypes_t<ToEnt_t, FromEnt_t>{};
     }
 
     template<class EntitySignature_t, class Callable_t>
@@ -205,8 +244,10 @@ public:
 
 private:
 
-    ComponentMan_t mComponents {  };
-    EntityMan_t mEntities {  };
+    static constexpr inline Key_t<ECSManager_t> constructor_key {  };
+
+    ComponentMan_t mComponentMan {  };
+    EntityMan_t mEntityMan {  };
 };
 
 } // namespace ECS

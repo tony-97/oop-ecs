@@ -46,21 +46,21 @@ apply(Callable_t&& cb, Args_t&& args, std::index_sequence<Indexs...>)
 } // namespace IMPL
 
 template<class T>
-struct Wrapper
+struct For
 {
     using type = T;
 };
 
 template<class T>
-static inline constexpr Wrapper<T> Wrapper_v {  };
+static inline constexpr For<T> For_v {  };
 
 template<class T, class... Args_t>
 struct Arguments_t
-    : Wrapper<T>, IMPL::Arguments_t<std::index_sequence_for<Args_t...>, Args_t...>
+    : For<T>, IMPL::Arguments_t<std::index_sequence_for<Args_t...>, Args_t...>
 {  };
 
 template<class T, class... Args_t, std::enable_if_t<ECS::IsConstructible_v<T, Args_t...>, bool> = true>
-Arguments_t(Wrapper<T>, Args_t&&...) -> Arguments_t<T, Args_t&&...>;
+Arguments_t(For<T>, Args_t&&...) -> Arguments_t<T, Args_t&&...>;
 
 template<class Args_t>
 struct ArgumentsSize;

@@ -49,8 +49,6 @@ public:
 
 private:
 
-    constexpr static inline ConstructorKey_t constructor_key {  };
-
     using Base_t::data;
     using Base_t::push_back;
     using Base_t::emplace_back;

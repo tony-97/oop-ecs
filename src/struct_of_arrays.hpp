@@ -89,9 +89,9 @@ public:
     template<class T> constexpr const_iterator<T> cend() const { return GetRequiredVector<T>().cend(); }
     template<class T> constexpr iterator<T>       end ()       { return GetRequiredVector<T>().end(); }
 
-    template<class T> constexpr const_iterator<T> rend () const { return GetRequiredVector<T>().rend(); }
-    template<class T> constexpr const_iterator<T> crend() const { return GetRequiredVector<T>().crend(); }
-    template<class T> constexpr iterator<T>       rend ()       { return GetRequiredVector<T>().rend(); }
+    template<class T> constexpr const_reverse_iterator<T> rend () const { return GetRequiredVector<T>().rend(); }
+    template<class T> constexpr const_reverse_iterator<T> crend() const { return GetRequiredVector<T>().crend(); }
+    template<class T> constexpr reverse_iterator<T>       rend ()       { return GetRequiredVector<T>().rend(); }
 
 private:
 

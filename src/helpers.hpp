@@ -127,7 +127,7 @@ public:
 
     constexpr ID_t GetID() const { return mID; }
 private:
-    constexpr explicit Identifier_t(typename Manager_t::ConstructorKey_t, ID_t id)
+    constexpr explicit Identifier_t(Key_t<Manager_t>, ID_t id)
         : mID { id } {  }
 
     const ID_t mID {  };
