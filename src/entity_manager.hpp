@@ -35,6 +35,15 @@ public:
         return ent_id;
     }
 
+    template<class RequiredEntity_t> constexpr auto
+    Destroy(EntityID_t<RequiredEntity_t> ent_id)
+    {
+        auto& ent  { Base_t::template operator[]<RequiredEntity_t>(ent_id.mID) };
+        auto& last { Base_t::template back<RequiredEntity_t>() };
+        ent = std::move(last);
+        Base_t::template pop_back<RequiredEntity_t>();
+    }
+
 private:
 
     using Base_t::push_back;
