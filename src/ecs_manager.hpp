@@ -76,14 +76,14 @@ private:
                                              typename EntitySignature_t::type>) {
                 auto i { ecs_man.mEntityMan.template size<RequiredEntity_t>() };
                 while (i--) {
-                    ProxyEntity<EntitySignature_t> prx_ent { constructor_key, i };
+                    ProxyEntity_t<EntitySignature_t> prx_ent { constructor_key, i };
                     std::apply(cb, ecs_man.template GetArgumentsFor<SystemSignature_t>(prx_ent));
                 }
             }
         }
     };
 
-    struct ArgumentsGetter_t
+    struct SystemArguments_t
     {
         template<class... Args_t, class PrxEnt_t, class ECSMan_t>
         constexpr auto operator()(const PrxEnt_t prx_ent, ECSMan_t&& ecs_man) const
@@ -153,7 +153,7 @@ private:
     template<class Signature_t, class PrxEnt_t>
     constexpr auto GetArgumentsFor(const PrxEnt_t ent_id) const
     {
-        return Seq::Unpacker_t<Signature_t>::Call(ArgumentsGetter_t{  },
+        return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
                                                   ent_id,
                                                   *this);
     }
@@ -161,7 +161,7 @@ private:
     template<class Signature_t, class PrxEnt_t>
     constexpr auto GetArgumentsFor(const PrxEnt_t ent_id)
     {
-        return Seq::Unpacker_t<Signature_t>::Call(ArgumentsGetter_t{  },
+        return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
                                                   ent_id,
                                                   *this);
     }
@@ -173,10 +173,10 @@ public:
     using ComponentMan_t  = ComponentManager_t<ComponentList_t>;
     using EntityMan_t     = EntityManager_t<Entity_t<EntitySignatures_t>...>;
 
-    template<class T> using ProxyEntity = Identifier_t<ECSManager_t, T>;
+    template<class T> using ProxyEntity_t = Identifier_t<ECSManager_t, T>;
 
     template<class EntitySignature_t, class... Arguments_t> constexpr auto
-    CreateEntity(Arguments_t&&... args) -> ProxyEntity<EntitySignature_t>
+    CreateEntity(Arguments_t&&... args) -> ProxyEntity_t<EntitySignature_t>
     {
         using RequiredEntity_t = Entity_t<EntitySignature_t>;
         using ArgsTypes = TMPL::TypeList_t<typename std::remove_reference_t<Arguments_t>::type...>;
@@ -206,24 +206,22 @@ public:
             }
         };
 
-        return ProxyEntity<EntitySignature_t>{
+        return ProxyEntity_t<EntitySignature_t>{
             constructor_key, std::apply(create_entity, create_components()).mID };
     }
 
     template<class PrxEnt_t>
     void Destroy(const PrxEnt_t prx_ent)
     {
-        using RequiredEntity_t = Entity_t<typename PrxEnt_t::type>;
-        auto& ent  { GetEntity(prx_ent) };
-        auto& last { mEntityMan.template back<RequiredEntity_t>() };
-        ent = std::move(last);
-        mEntityMan.template pop_back<RequiredEntity_t>();
+        auto& ent { GetEntity(prx_ent) };
+        
+        mEntityMan.Destroy(prx_ent.GetID());
     }
 
-    template<class ToEnt_t, class FromEnt_t>
-    void TransformTo(FromEnt_t&& ent)
+    template<class DestEnt_t, class SrcEnt_t>
+    void TransformTo(SrcEnt_t&& ent)
     {
-        TMPL::Sequence::RemoveTypes_t<ToEnt_t, FromEnt_t>{};
+        TMPL::Sequence::RemoveTypes_t<DestEnt_t, SrcEnt_t>{};
     }
 
     template<class EntitySignature_t, class Callable_t>
