@@ -44,9 +44,11 @@ public:
     }
 
     template<class Component_t>
-    constexpr auto GetComponentID() const { return std::get<ID_t<Component_t, IndexSize_t>>(mComponentIDs); } 
+    constexpr auto GetComponentID() const
+    { return std::get<ID_t<Component_t, IndexSize_t>>(mComponentIDs); } 
 
-    constexpr auto GetComponentIDs() const -> const ComponentIDs_t& { return mComponentIDs; }
+    constexpr auto GetComponentIDs() const -> const ComponentIDs_t&
+    { return mComponentIDs; }
 
 private:
 
