@@ -6,8 +6,6 @@
 
 #include <cassert>
 
-#include "helpers.hpp"
-
 namespace ECS
 {
 
@@ -57,7 +55,7 @@ struct ECSMap_t
     [[nodiscard]] constexpr Key_t emplace_back(Args_t&&... args)
     {
         Key_t key { mFreeIndex };
-        if (mFreeIndex == mData.size()) {
+        if (mFreeIndex == mLastIndex) {
             mIndexes.emplace_back(mData.size());
             mEraseIndexs.emplace_back(mData.size());
             mData.emplace_back(std::forward<Args_t>(args)...);
@@ -67,6 +65,7 @@ struct ECSMap_t
             mEraseIndexs[mLastIndex] = mFreeIndex; 
             mFreeIndex = mIndexes[mFreeIndex];
         }
+        ++mLastIndex;
 
         return key;
     }
@@ -75,10 +74,14 @@ struct ECSMap_t
     {
         assert(slot.mIndex != std::numeric_limits<std::size_t>::max());
 
+        --mLastIndex;
         mData[mIndexes[slot.mIndex]].~T();
-        mData[mIndexes[slot.mIndex]] = std::move(mData[mLastIndex - 1]);
-        mEraseIndexs[mIndexes[slot.mIndex]] = mEraseIndexs[mLastIndex - 1];
-
+        mData[mIndexes[slot.mIndex]] = std::move(mData[mLastIndex]);
+        mEraseIndexs[mIndexes[slot.mIndex]] = mEraseIndexs[mLastIndex];
+        // update the slot
+        mIndexes[mEraseIndexs[mLastIndex]] = mIndexes[slot.mIndex];
+        // update the index list
+        mIndexes[slot.mIndex] = mFreeIndex;
         mFreeIndex = slot.mIndex;
     }
 
