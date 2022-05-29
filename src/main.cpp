@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "ecs_manager.hpp"
-#include "arguments.hpp"
+//#include "ecs_manager.hpp"
+//#include "arguments.hpp"
 
 #include "ecs_map.hpp"
 
@@ -78,10 +78,14 @@ int main()
     auto k1 = slot_map.emplace_back(1);
     auto k2 = slot_map.emplace_back(2);
     auto k3 = slot_map.emplace_back(3);
-    slot_map.erase(std::move(k1));
+    auto k4 = slot_map.emplace_back(4);
 
     std::cout << slot_map[k1] << std::endl;
     std::cout << slot_map[k2] << std::endl;
     std::cout << slot_map[k3] << std::endl;
+    std::cout << slot_map[k4] << std::endl;
+
+    slot_map.erase(std::move(k1));
+
     return 0;
 }
