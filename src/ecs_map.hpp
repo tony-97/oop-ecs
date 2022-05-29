@@ -1,7 +1,12 @@
-#include "helpers.hpp"
+#include <memory>
+#include <utility>
 #include <vector>
 #include <cstdint>
 #include <limits>
+
+#include <cassert>
+
+#include "helpers.hpp"
 
 namespace ECS
 {
@@ -11,13 +16,11 @@ struct Slot_t
 {
     std::size_t mDataIndex {  };
     std::size_t mEraseIndex {  };
-    std::uint8_t mData[sizeof(T)] {  };
+    T mData {  };
 
     template<class... Args_t> constexpr
     Slot_t(Args_t&&... args)
-    {
-        new (mData) T { std::forward<Args_t>(args)... };
-    }
+        : mData { std::forward<Args_t>(args)... } {  }
 };
 
 template<class T>
@@ -44,19 +47,25 @@ struct ECSMap_t
     private:
         friend ECSMap_t;
 
+        Key_t(std::size_t index)
+            : mIndex { index } {  };
+
         std::size_t mIndex {  };
     };
 
-    template<class... Args_t> constexpr
-    Key_t emplace_back(Args_t&&... args)
+    template<class... Args_t> 
+    [[nodiscard]] constexpr Key_t emplace_back(Args_t&&... args)
     {
-        Key_t key {  };
+        Key_t key { mFreeIndex };
         if (mFreeIndex == mData.size()) {
-            key.mIndex = mIndexes.emplace_back(mFreeIndex);
+            mIndexes.emplace_back(mData.size());
+            mEraseIndexs.emplace_back(mData.size());
             mData.emplace_back(std::forward<Args_t>(args)...);
             ++mFreeIndex;
         } else {
-
+            new (&mData[mLastIndex]) T { std::forward<Args_t>(args)... };
+            mEraseIndexs[mLastIndex] = mFreeIndex; 
+            mFreeIndex = mIndexes[mFreeIndex];
         }
 
         return key;
@@ -64,6 +73,13 @@ struct ECSMap_t
 
     void erase(Key_t&& slot)
     {
+        assert(slot.mIndex != std::numeric_limits<std::size_t>::max());
+
+        mData[mIndexes[slot.mIndex]].~T();
+        mData[mIndexes[slot.mIndex]] = std::move(mData[mLastIndex - 1]);
+        mEraseIndexs[mIndexes[slot.mIndex]] = mEraseIndexs[mLastIndex - 1];
+
+        mFreeIndex = slot.mIndex;
     }
 
           T& operator[](const Key_t& slot)       { return mData[mIndexes[slot.mIndex]]; }
