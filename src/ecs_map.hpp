@@ -62,6 +62,7 @@ struct ECSMap_t
             ++mFreeIndex;
         } else {
             new (&mData[mLastIndex]) T { std::forward<Args_t>(args)... };
+            mIndexes[mFreeIndex] = mLastIndex;
             mEraseIndexs[mLastIndex] = mFreeIndex; 
             mFreeIndex = mIndexes[mFreeIndex];
         }
@@ -85,8 +86,17 @@ struct ECSMap_t
         mFreeIndex = slot.mIndex;
     }
 
-          T& operator[](const Key_t& slot)       { return mData[mIndexes[slot.mIndex]]; }
-    const T& operator[](const Key_t& slot) const { return mData[mIndexes[slot.mIndex]]; }
+    T& operator[](const Key_t& slot)
+    {
+        assert(slot.mIndex != std::numeric_limits<std::size_t>::max());
+        return mData[mIndexes[slot.mIndex]];
+    }
+
+    const T& operator[](const Key_t& slot) const
+    {
+        assert(slot.mIndex != std::numeric_limits<std::size_t>::max());
+        return mData[mIndexes[slot.mIndex]];
+    }
 };
 
 } // namespace ECS
