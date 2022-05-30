@@ -81,11 +81,17 @@ int main()
     auto k4 = slot_map.emplace_back(4);
 
     std::cout << slot_map[k1] << std::endl;
+
+    slot_map.erase(std::move(k1));
+
     std::cout << slot_map[k2] << std::endl;
     std::cout << slot_map[k3] << std::endl;
     std::cout << slot_map[k4] << std::endl;
 
-    slot_map.erase(std::move(k1));
+    slot_map.erase(std::move(k2));
+
+    std::cout << slot_map[k3] << std::endl;
+    std::cout << slot_map[k4] << std::endl;
 
     return 0;
 }
