@@ -10,12 +10,12 @@ namespace ECS
 
 // Entities is a variadic template argument that each one is a list of components
 template<class... Entities>
-struct EntityManager_t final : SoA_t<Entities...>, Uncopyable_t
+struct EntityManager_t final : SoA_t<Vector_t, Entities...>, Uncopyable_t
 {
 public:
 
                       using Self_t           = EntityManager_t;
-                      using Base_t           = SoA_t<Entities...>;
+                      using Base_t           = SoA_t<Vector_t, Entities...>;
                       using ConstructorKey_t = Key_t<Self_t>;
     template<class T> using EntityID_t       = ID_t<T, IndexSize_t>;
 

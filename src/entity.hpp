@@ -1,12 +1,13 @@
 #pragma once
 
-#include <sequence.hpp>
-
 #include <array>
 #include <type_traits>
 
+#include <sequence.hpp>
+
 #include "type_aliases.hpp"
 #include "helpers.hpp"
+#include "ecs_map.hpp"
 
 namespace ECS
 {
@@ -17,12 +18,15 @@ struct ComponentsToIDs;
 template<template<class...> class Components_t, class... Ts>
 struct ComponentsToIDs<Components_t<Ts...>>
 {
-    using type = TMPL::TypeList_t<ID_t<Ts, IndexSize_t>...>;
+    using type = TMPL::TypeList_t<typename ECSMap_t<Ts>::Key_t...>;
 };
 
 template<class Components_t>
 using ComponentsToIDs_t = typename ComponentsToIDs<Components_t>::type;
 
+// TODO: create a second template parameter for the component id type
+// TODO: sort the ids passed in the constructor in any order for construct the
+//       component ids
 template<class Signature_t>
 struct Entity_t final : Uncopyable_t
 {
