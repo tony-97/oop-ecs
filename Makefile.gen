@@ -1,0 +1,163 @@
+# Archive maintaining program
+AR := ar
+
+# Flags to give archive-maintaining program
+ARFLAGS := -crs
+
+# Generate object indexes
+RANLIB := ranlib
+
+# C compiler
+CC ?= gcc
+
+# C++ compiler
+CXX ?= g++
+
+# Linker
+LD := $(CXX)
+
+# All warning flags
+WFLAGS := -W -Wall -Wextra -Wpedantic -pedantic -pedantic-errors
+
+# Pre processor flags
+CPPFLAGS +=
+
+# Flags to pass to the C compiler
+CFLAGS += $(WFLAGS)
+
+# Flags to pass to the C++ compiler
+CXXFLAGS += $(WFLAGS)
+
+# Path for the linker libs
+LDFLAGS +=
+
+# Libs names for the linker
+LDLIBS +=
+
+# Program for create a directory if not exist
+MKDIR := mkdir -p
+
+# Program for remove a file
+RM := rm -fR
+
+#==============================================================================
+# Compile only macro
+#==============================================================================
+# $(1) : Object to output
+# $(2) : Source to compile C/C++
+# $(3) : Include file .h/.hpp
+# $(4) : Compiler
+# $(5) : Compiler preprocessor flags
+# $(6) : Compiler flags
+define COMPILE_ONLY
+$(1) : $(2) $(3)
+	$(4) -c $(2) -o $(1) $(5) $(6) 
+endef
+
+#==============================================================================
+# Replace $(SRC_DIR) path to $(OBJ_DIR)
+#==============================================================================
+# $(1) : Source file with full path
+define SOURCE_PATH_2_OBJ
+$(patsubst $(SRC_DIR)%,$(OBJ_DIR)%,$(1))
+endef
+
+#==============================================================================
+# Replace source file with his respective include file
+#==============================================================================
+# $(1) : Full source filename
+define SOURCES_2_INCLUDE
+$(subst .c,.h,$(subst .cc,.hh,$(subst .cxx,.hxx,$(subst .cpp,.hpp,$(1)))))
+endef
+
+#==============================================================================
+# Replaces srcs extension with .c.o .cpp.o 
+#==============================================================================
+# $(1) : Full source filename
+define CXXSOURCES_2_OBJS
+$(call SOURCE_PATH_2_OBJ,\
+$(subst .cpp,.cc.o,$(subst .cxx,.cc.o,$(subst .cc,.cc.o,$(1)))))
+endef
+define CSOURCES_2_OBJS
+$(call SOURCE_PATH_2_OBJ,$(subst .c,.c.o,$(1)))
+endef
+
+#==============================================================================
+# Find sources files on a folder with the given pattern
+#==============================================================================
+# $(1) : Path for search sources
+# $(2) : Patern to search
+define FIND_SOURCES
+$(shell find $(1) -type f -iname $(2))
+endef
+
+# The path where put the executable and the library
+BUILD_PATH ?= .
+
+# Name for the library
+LIB_NAME ?= lmylib.a
+
+# Name of the executable
+EXEC_NAME ?= app
+
+# Name of the sources directory
+SRC_DIR ?= src
+
+# Name of the objects directory
+OBJ_DIR ?= obj
+
+# Sources to compile
+SRCS_CXX := $(call FIND_SOURCES,$(SRC_DIR),"*.cpp") \
+			$(call FIND_SOURCES,$(SRC_DIR),"*.cxx") \
+			$(call FIND_SOURCES,$(SRC_DIR),"*.cc")
+
+SRCS_C := $(call FIND_SOURCES,$(SRC_DIR),"*.c")
+
+# Sources converted to object file
+OBJS_CXX := $(call CXXSOURCES_2_OBJS,$(SRCS_CXX))
+OBJS_C   := $(call CSOURCES_2_OBJS,$(SRCS_C))
+
+# Sources directorie tree
+SRCS_DIRS := $(shell find $(SRC_DIR)/ -type d)
+
+# Objects directories same structure as src/ dir
+OBJS_DIRS := $(call SOURCE_PATH_2_OBJ,$(SRCS_DIRS))
+
+.PHONY: clean cleanall
+
+$(BUILD_PATH)/$(EXEC_NAME): $(OBJS_DIRS) $(OBJS_CXX) $(OBJS_C)
+	$(LD) -o $@ $(OBJS_CXX) $(OBJS_C) $(LDFLAGS) $(LDLIBS)
+
+$(BUILD_PATH)/$(LIB_NAME): $(OBJS_DIRS) $(OBJS_CXX) $(OBJS_C)
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(RANLIB) $@
+
+$(foreach CXX_FILE,$(SRCS_CXX),\
+$(eval \
+$(call COMPILE_ONLY,$(call CXXSOURCES_2_OBJS,$(CXX_FILE)),\
+$(CXX_FILE),$(call SOURCES_2_INCLUDE,$(CXX_FILE)),$(CXX),$(CPPFLAGS),$(CXXFLAGS))))
+
+$(foreach C_FILE,$(SRCS_C),\
+$(eval \
+$(call COMPILE_ONLY,$(call CSOURCES_2_OBJS,$(C_FILE)),\
+$(C_FILE),$(call SOURCES_2_INCLUDE,$(C_FILE)),$(CC),$(CPPFLAGS),$(CFLAGS))))
+
+$(OBJS_DIRS):
+	$(MKDIR) $(OBJS_DIRS)
+
+info:
+	$(info [INFO] C++ flags: $(CXXFLAGS))
+	$(info [INFO] C flags: $(CFLAGS))
+	$(info [INFO] libraries flags: $(LDFLAGS))
+	$(info [INFO] libraries: $(LDLIBS))
+	$(info [INFO] C++ Source files: $(SRCS_CXX))
+	$(info [INFO] C Source files: $(SRCS_C))
+	$(info [INFO] Objects to create: $(OBJS))
+	$(info [INFO] Source directory tree: $(SRCS_DIRS))
+	$(info [INFO] Object directory tree to create: $(OBJS_DIRS))
+
+clean:
+	$(RM) $(OBJS_DIRS)
+
+cleanall: clean
+	$(RM) $(BUILD_PATH)/$(EXEC_NAME) $(BUILD_PATH)/$(LIB_NAME)
