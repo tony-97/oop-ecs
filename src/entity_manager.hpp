@@ -43,7 +43,7 @@ public:
         ent = std::move(last);
         Base_t::template pop_back<RequiredEntity_t>();
 
-        return std::move(cmp_ids);
+        return cmp_ids;
     }
 
 private:

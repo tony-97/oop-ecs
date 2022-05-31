@@ -9,7 +9,7 @@
 struct RenderComponent_t
 {
     char c;
-    ~RenderComponent_t() { std::cout << "Dtor. called\n" }
+    ~RenderComponent_t() { std::cout << "Dtor. called\n"; }
 };
 
 struct PositionComponent_t
