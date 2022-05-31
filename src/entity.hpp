@@ -5,6 +5,7 @@
 
 #include <sequence.hpp>
 
+#include "component_manager.hpp"
 #include "type_aliases.hpp"
 #include "helpers.hpp"
 #include "ecs_map.hpp"
@@ -18,7 +19,7 @@ struct ComponentsToIDs;
 template<template<class...> class Components_t, class... Ts>
 struct ComponentsToIDs<Components_t<Ts...>>
 {
-    using type = TMPL::TypeList_t<typename ECSMap_t<Ts>::Key_t...>;
+    using type = TMPL::TypeList_t<typename ECSMap_t<ComponentWrapper<Ts>>::Key_t...>;
 };
 
 template<class Components_t>
@@ -42,14 +43,16 @@ public:
 
     constexpr Entity_t& operator=(Entity_t&& other)
     {
-        mComponentIDs = other.mComponentIDs;
+        mComponentIDs = std::move(other.mComponentIDs);
 
         return *this;
     }
 
     template<class Component_t>
-    constexpr auto GetComponentID() const
-    { return std::get<ID_t<Component_t, IndexSize_t>>(mComponentIDs); } 
+    constexpr const auto& GetComponentID() const
+    {
+        return std::get<typename ECSMap_t<ComponentWrapper<Component_t>>::Key_t>(mComponentIDs);
+    }
 
     constexpr auto GetComponentIDs() const -> const ComponentIDs_t&
     { return mComponentIDs; }

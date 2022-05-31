@@ -21,7 +21,6 @@ public:
 
     constexpr explicit EntityManager_t() : Base_t{  }
     {
-        ((void)Entities{  }, ...) ;
     }
 
     template<class RequiredEntity_t, class... ComponentIDs_t> constexpr auto
@@ -40,8 +39,11 @@ public:
     {
         auto& ent  { Base_t::template operator[]<RequiredEntity_t>(ent_id.mID) };
         auto& last { Base_t::template back<RequiredEntity_t>() };
+        auto cmp_ids { ent.GetComponentIDs() };
         ent = std::move(last);
         Base_t::template pop_back<RequiredEntity_t>();
+
+        return std::move(cmp_ids);
     }
 
 private:

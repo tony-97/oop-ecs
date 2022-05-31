@@ -126,16 +126,16 @@ private:
         return Args::apply(cmp_creator, std::forward<ComponentArgs_t>(arg));
     }
 
-    template<class CmpID_t, class Cmp = typename CmpID_t::type>
-    constexpr auto GetComponent(const CmpID_t cmp_id) const -> const Cmp&
+    template<class CmpID_t>
+    constexpr auto GetComponent(const CmpID_t& cmp_id) const -> const auto&
     {
-        return mComponentMan.template operator[]<ComponentWrapper<Cmp>>(cmp_id.mID).mSelf;
+        return mComponentMan.GetComponent(cmp_id);
     }
 
-    template<class CmpID_t, class Cmp = typename CmpID_t::type>
-    constexpr auto GetComponent(const CmpID_t cmp_id) -> Cmp&
+    template<class CmpID_t>
+    constexpr auto GetComponent(const CmpID_t& cmp_id) -> auto&
     {
-        return SameAsConstMemFunc(this, &ECSManager_t::GetComponent<CmpID_t, Cmp>, cmp_id);
+        return mComponentMan.GetComponent(cmp_id);
     }
 
     template<class PrxEnt_t>
@@ -213,9 +213,13 @@ public:
     template<class PrxEnt_t>
     void Destroy(const PrxEnt_t prx_ent)
     {
-        auto& ent { GetEntity(prx_ent) };
-        
-        mEntityMan.Destroy(prx_ent.GetID());
+        auto cmp_ids {
+            mEntityMan.Destroy(ID_t<Entity_t<typename PrxEnt_t::type>, IndexSize_t>{ prx_ent.GetID() })
+        };
+
+        std::apply([&](auto&&... keys) {
+                    mComponentMan.Destroy(keys...);
+                }, cmp_ids);
     }
 
     template<class DestEnt_t, class SrcEnt_t>

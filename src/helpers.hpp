@@ -98,6 +98,7 @@ struct ID_t
 {
     using type    = T;
     using id_type = U;
+
     U mID {  };
 };
 

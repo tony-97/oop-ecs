@@ -26,25 +26,20 @@ struct Slot_t
 template<class T>
 struct ECSMap_t
 {
-    std::size_t mFreeIndex {  };
-    std::size_t mLastIndex {  };
-    std::vector<std::size_t> mIndexes  {  };
-    std::vector<std::size_t> mEraseIndexs {  };
-    std::vector<T> mData {  };
-
     struct Key_t
     {
-        Key_t(Key_t&& other) : mIndex { other.mIndex }
-        {
-            other.mIndex = std::numeric_limits<std::size_t>::max();
-        }
-
-        Key_t& operator=(Key_t&& other)
-        {
-            mIndex = other.mIndex;
-            other.mIndex = std::numeric_limits<std::size_t>::max();
-        }
-    private:
+        using value_type = T;
+        //Key_t(Key_t&& other) : mIndex { other.mIndex }
+        //{
+        //    other.mIndex = std::numeric_limits<std::size_t>::max();
+        //}
+        //
+        //Key_t& operator=(Key_t&& other)
+        //{
+        //    mIndex = other.mIndex;
+        //    other.mIndex = std::numeric_limits<std::size_t>::max();
+        //}
+    //private:
         friend ECSMap_t;
 
         Key_t(std::size_t index)
@@ -52,6 +47,9 @@ struct ECSMap_t
 
         std::size_t mIndex {  };
     };
+
+    using value_type = T;
+    using size_type  = Key_t;
 
     template<class... Args_t> 
     [[nodiscard]] constexpr Key_t emplace_back(Args_t&&... args)
@@ -99,6 +97,12 @@ struct ECSMap_t
         assert(slot.mIndex != std::numeric_limits<std::size_t>::max());
         return mData[mIndexes[slot.mIndex]];
     }
+private:
+    std::size_t mFreeIndex {  };
+    std::size_t mLastIndex {  };
+    std::vector<std::size_t> mIndexes  {  };
+    std::vector<std::size_t> mEraseIndexs {  };
+    std::vector<T> mData {  };
 };
 
 } // namespace ECS

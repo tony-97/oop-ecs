@@ -41,6 +41,36 @@ public:
         return Base_t::template emplace_back<Component_t>(std::forward<Args_t>(args)...);
     }
 
+    template<class K>
+    constexpr void Destroy(K& key)
+    {
+        auto& cont {
+            Base_t::template GetRequiredContainer<typename K::value_type>()
+        };
+
+        cont.erase(std::move(key));
+    }
+ 
+    template<class... K>
+    constexpr void Destroy(K&... keys)
+    {
+        (Destroy(keys), ...);
+    }
+
+    template<class K>
+    constexpr auto& GetComponent(const K& cmp_id)
+    {
+        using Component_t = typename K::value_type;
+        return Base_t::template operator[]<Component_t>(cmp_id).mSelf;
+    }
+
+    template<class K>
+    constexpr const auto& GetComponent(const K& cmp_id) const
+    {
+        using Component_t = typename K::value_type;
+        return Base_t::template operator[]<Component_t>(cmp_id).mSelf;
+    }
+
 private:
 
     using Base_t::data;

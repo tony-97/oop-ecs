@@ -33,11 +33,11 @@ public:
         CheckIfTypesAreUnique();
     }
 
-    template<class T> constexpr reference<T>&       operator[](std::size_t index) { return GetRequiredContainer<T>()[index]; }
-    template<class T> constexpr const_reference<T>& operator[](std::size_t index) const { return GetRequiredContainer<T>()[index]; }
+    template<class T, class U> constexpr reference<T>&       operator[](const U& index) { return GetRequiredContainer<T>()[index]; }
+    template<class T, class U> constexpr const_reference<T>& operator[](const U& index) const { return GetRequiredContainer<T>()[index]; }
 
-    template<class T> constexpr reference<T>&       at(std::size_t index)       { return GetRequiredContainer<T>().at(index); }
-    template<class T> constexpr const_reference<T>& at(std::size_t index) const { return GetRequiredContainer<T>().at(index); }
+    template<class T> constexpr reference<T>&       at(size_type<T> index)       { return GetRequiredContainer<T>().at(index); }
+    template<class T> constexpr const_reference<T>& at(size_type<T> index) const { return GetRequiredContainer<T>().at(index); }
 
     template<class T> constexpr reference<T>&       front()       { return GetRequiredContainer<T>().front(); }
     template<class T> constexpr const_reference<T>& front() const { return GetRequiredContainer<T>().front(); }
@@ -67,8 +67,8 @@ public:
     template<class T> constexpr void push_back(const T& value) { GetRequiredContainer<T>().push_back(value); }
     template<class T> constexpr void push_back     (T&& value) { GetRequiredContainer<T>().push_back(value); }
 
-    template<class T, class... Args_t> constexpr auto emplace_back(Args_t&&... args )
-    -> reference<T> { return GetRequiredContainer<T>().emplace_back(std::forward<Args_t>(args)...); }
+    template<class T, class... Args_t> constexpr decltype(auto) emplace_back(Args_t&&... args )
+    { return GetRequiredContainer<T>().emplace_back(std::forward<Args_t>(args)...); }
 
     template<class T> constexpr void pop_back() { GetRequiredContainer<T>().pop_back(); }
 
@@ -93,7 +93,7 @@ public:
     template<class T> constexpr const_reverse_iterator<T> crend() const { return GetRequiredContainer<T>().crend(); }
     template<class T> constexpr reverse_iterator<T>       rend ()       { return GetRequiredContainer<T>().rend(); }
 
-private:
+protected:
 
     template<class RequiredType_t> constexpr auto
     GetRequiredContainer() const -> const Container_t<RequiredType_t>&
