@@ -14,7 +14,7 @@ namespace ECS
 template<class T>
 struct Slot_t
 {
-    std::size_t mDataIndex {  };
+    std::size_t mIndex {  };
     std::size_t mEraseIndex {  };
     T mValue {  };
 
@@ -26,6 +26,14 @@ struct Slot_t
 template<class T>
 struct ECSMap_t
 {
+    using value_type = T;
+    using size_type  = typename std::vector<T>::size_type;
+    using difference_type = std::ptrdiff_t;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using pointer = value_type*;
+    using const_pointer = const pointer;
+
     struct Key_t
     {
         using value_type = T;
@@ -42,34 +50,40 @@ struct ECSMap_t
     //private:
         friend ECSMap_t;
 
-        Key_t(std::size_t index)
-            : mIndex { index } {  };
+        Key_t(size_type index) : mIndex { index } {  };
 
-        std::size_t mIndex {  };
+        size_type GetIndex() const { return mIndex; }
+    private:
+        size_type mIndex {  };
     };
 
-    template<bool IsConst>
+    template<class Value_t>
     struct iterator_t
     {
-        template<class U>
-        using Constness_t = std::conditional_t<IsConst, std::add_const_t<U>, U>;
+
+        using slot_ptr = std::conditional_t<std::is_const_v<Value_t>, const Slot_t<T>, Slot_t<T>>*;
 
         using iterator_category = std::bidirectional_iterator_tag;
         using difference_type   = std::ptrdiff_t;
-        using value_type        = T;
-        using pointer           = Constness_t<value_type>*;
-        using reference         = Constness_t<value_type>&;
+        using value_type        = Value_t;
+        using pointer           = value_type*;
+        using reference         = value_type&;
 
-        constexpr explicit iterator_t(Slot_t<T>* slot) : mSlot { slot } {  }
+        constexpr iterator_t(slot_ptr slot) : mSlot { slot } {  }
+
+        operator iterator_t<const Value_t> () const
+        {
+            return { mSlot };
+        }
 
         constexpr reference operator*() const
         {
-            return mSlot->mData;
+            return mSlot->mValue;
         }
 
         constexpr pointer operator->() const
         {
-            return &mSlot->mData;
+            return &mSlot->mValue;
         }
 
         constexpr iterator_t& operator++()
@@ -138,21 +152,13 @@ struct ECSMap_t
         }
 
     private:
-        Slot_t<T>* mSlot {  };
+        slot_ptr mSlot {  };
     };
 
-    using iterator               = iterator_t<false>;
-    using const_iterator         = iterator_t<true>;
+    using iterator               = iterator_t<T>;
+    using const_iterator         = iterator_t<const T>;
     using reverse_iterator       = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
-    using value_type = T;
-    using size_type  = typename std::vector<T>::size_type;
-    using difference_type = std::ptrdiff_t;
-    using reference = value_type&;
-    using const_reference = const value_type&;
-    using pointer = value_type*;
-    using const_pointer = const pointer;
 
     template<class... Args_t> 
     [[nodiscard]] constexpr Key_t emplace_back(Args_t&&... args)
@@ -173,7 +179,7 @@ struct ECSMap_t
         return key;
     }
 
-    constexpr void erase(Key_t&& slot)
+    constexpr void erase(const Key_t& slot)
     {
         assert(slot.mIndex != std::numeric_limits<std::size_t>::max());
 
@@ -190,8 +196,12 @@ struct ECSMap_t
 
     constexpr void erase(const_iterator it)
     {
-        auto idx { std::distance(begin(), it) };
-        erase(Key_t(mData[idx].mEraseIndex));
+        erase(get_key(it));
+    }
+
+    constexpr Key_t get_key(const_iterator it) const
+    {
+        return { mData[get_index(it)].mEraseIndex };
     }
 
     constexpr T& operator[](const Key_t& slot)
@@ -208,17 +218,23 @@ struct ECSMap_t
 
     iterator               begin()         { return { mData.data() }; }
     const_iterator         begin()   const { return { mData.data() }; }
-    reverse_iterator       rbegin()        { return { &mData.back() }; }
-    const_reverse_iterator rbegin()  const { return { &mData.back() }; }
-    const_reverse_iterator crbegin() const { return { &mData.back() }; }
+    reverse_iterator       rbegin()        { return { std::make_reverse_iterator(end()) }; }
+    const_reverse_iterator rbegin()  const { return { std::make_reverse_iterator(end()) }; }
+    const_reverse_iterator crbegin() const { return { rbegin() }; }
 
     iterator               end()         { return { mData.data() + mLastIndex }; }
     const_iterator         end()   const { return { mData.data() + mLastIndex }; }
-    reverse_iterator       rend()        { return { --begin() }; }
-    const_reverse_iterator rend()  const { return { --begin() }; }
-    const_reverse_iterator crend() const { return { --begin() }; }
+    reverse_iterator       rend()        { return { std::make_reverse_iterator(begin()) }; }
+    const_reverse_iterator rend()  const { return { std::make_reverse_iterator(begin()) }; }
+    const_reverse_iterator crend() const { return { rend() }; }
 
 private:
+
+    constexpr auto get_index(const_iterator it) const
+    {
+        return static_cast<size_type>(std::distance(begin(), it));
+    }
+
     std::size_t mFreeIndex {  };
     std::size_t mLastIndex {  };
     std::vector<Slot_t<T>> mData {  };
