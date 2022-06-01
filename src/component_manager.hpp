@@ -50,12 +50,6 @@ public:
 
         cont.erase(std::move(key));
     }
- 
-    template<class... K>
-    constexpr void Destroy(K&... keys)
-    {
-        (Destroy(keys), ...);
-    }
 
     template<class K>
     constexpr auto& GetComponent(const K& cmp_id)
