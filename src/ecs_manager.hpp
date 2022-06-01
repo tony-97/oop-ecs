@@ -74,10 +74,10 @@ private:
             using RequiredEntity_t = Entity_t<EntitySignature_t>;
             if constexpr (TMPL::IsSubsetOf_v<typename SystemSignature_t::type,
                                              typename EntitySignature_t::type>) {
-                auto i { ecs_man.mEntityMan.template size<RequiredEntity_t>() };
-                while (i--) {
-                    ProxyEntity_t<EntitySignature_t> prx_ent { constructor_key, i };
-                    std::apply(cb, ecs_man.template GetArgumentsFor<SystemSignature_t>(prx_ent));
+                auto it  { ecs_man.mEntityMan.template rbegin<RequiredEntity_t>() };
+                auto end { ecs_man.mEntityMan.template rend<RequiredEntity_t>() };
+                for (; it != end; ++it) {
+                    std::apply(cb, ecs_man.template GetArgumentsFor<SystemSignature_t>(std::next(it).base()));
                 }
             }
         }
@@ -85,13 +85,13 @@ private:
 
     struct SystemArguments_t
     {
-        template<class... Args_t, class PrxEnt_t, class ECSMan_t>
-        constexpr auto operator()(const PrxEnt_t prx_ent, ECSMan_t&& ecs_man) const
+        template<class... Args_t, class It_t, class ECSMan_t>
+        constexpr auto operator()(It_t&& it, ECSMan_t&& ecs_man) const
         {
-            const auto& ent { ecs_man.template GetEntity(prx_ent) };
-            return std::tuple<AddConstIf_t<ECSMan_t, Args_t>&..., PrxEnt_t>{
-                ecs_man.GetComponent(ent.template GetComponentID<Args_t>())...,
-                prx_ent };
+            auto ent_key { ecs_man.mEntityMan.template GetKey(it) };
+            return std::tuple<AddConstIf_t<ECSMan_t, Args_t>&..., decltype(ent_key)>{
+                ecs_man.GetComponent(it->template GetComponentID<Args_t>())...,
+                ent_key };
         }
     };
 
@@ -150,19 +150,19 @@ private:
         return SameAsConstMemFunc(this, &ECSManager_t::GetEntity<PrxEnt_t>, prx_ent);
     }
 
-    template<class Signature_t, class PrxEnt_t>
-    constexpr auto GetArgumentsFor(const PrxEnt_t ent_id) const
+    template<class Signature_t, class It_t>
+    constexpr auto GetArgumentsFor(It_t&& it) const
     {
         return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
-                                                  ent_id,
+                                                  std::forward<It_t>(it),
                                                   *this);
     }
 
-    template<class Signature_t, class PrxEnt_t>
-    constexpr auto GetArgumentsFor(const PrxEnt_t ent_id)
+    template<class Signature_t, class It_t>
+    constexpr auto GetArgumentsFor(It_t&& it)
     {
         return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
-                                                  ent_id,
+                                                  std::forward<It_t>(it),
                                                   *this);
     }
 
@@ -172,8 +172,6 @@ public:
     using EntityList_t    = TMPL::TypeList_t<EntitySignatures_t...>;
     using ComponentMan_t  = ComponentManager_t<ComponentList_t>;
     using EntityMan_t     = EntityManager_t<Entity_t<EntitySignatures_t>...>;
-
-    template<class T> using ProxyEntity_t = Identifier_t<ECSManager_t, T>;
 
     template<class EntitySignature_t, class... Arguments_t> constexpr auto
     CreateEntity(Arguments_t&&... args)

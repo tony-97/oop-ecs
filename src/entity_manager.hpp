@@ -3,6 +3,8 @@
 #include "struct_of_arrays.hpp"
 #include "helpers.hpp"
 #include "ecs_map.hpp"
+#include <type_traits>
+#include <utility>
 
 namespace ECS
 {
@@ -29,11 +31,21 @@ public:
     Destroy(K&& ent_id)
     {
         using RequiredEntity_t = typename K::value_type;
-        auto& ent  { Base_t::template operator[]<RequiredEntity_t>(ent_id) };
+        auto& ent  { Base_t::template operator[]<RequiredEntity_t>(std::forward<K>(ent_id)) };
         auto cmp_ids { ent.GetComponentIDs() };
-        Base_t::template erase<RequiredEntity_t>(ent_id);
+        Base_t::template erase<RequiredEntity_t>(std::forward<K>(ent_id));
 
         return cmp_ids;
+    }
+
+    template<class It_t> constexpr auto
+    GetKey(It_t&& it) const
+    {
+        auto& cont {
+            Base_t::template
+                GetRequiredContainer<typename std::remove_reference_t<It_t>::value_type>() };
+
+        return cont.get_key(std::forward<It_t>(it));
     }
 
 private:
