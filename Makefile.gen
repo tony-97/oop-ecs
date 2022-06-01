@@ -17,7 +17,7 @@ CXX ?= g++
 LD := $(CXX)
 
 # All warning flags
-WFLAGS := -W -Wall -Wextra -Wpedantic -pedantic -pedantic-errors
+WFLAGS := -W -Wall -Wextra -Wpedantic -pedantic -pedantic-errors $(WFLAGS)
 
 # Pre processor flags
 CPPFLAGS +=
