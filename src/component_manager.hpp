@@ -25,7 +25,6 @@ struct ComponentManager_t<ComponentTypes_t<Components_t...>> final
     : SoA_t<ECSMap_t, ComponentWrapper<Components_t>...>, Uncopyable_t
 {
 public:
-
                       using Self_t           = ComponentManager_t;
                       using Base_t           = SoA_t<ECSMap_t, ComponentWrapper<Components_t>...>;
                       using ConstructorKey_t = Key_t<Self_t>;
@@ -42,20 +41,20 @@ public:
     }
 
     template<class K>
-    constexpr void Destroy(K& key)
+    constexpr void Destroy(const K& key)
     {
         auto& cont {
             Base_t::template GetRequiredContainer<typename K::value_type>()
         };
 
-        cont.erase(std::move(key));
+        cont.erase(key);
     }
 
     template<class K>
-    constexpr auto& GetComponent(const K& cmp_id)
+    constexpr auto& GetComponent(const K& cmp_key)
     {
         using Component_t = typename K::value_type;
-        return Base_t::template operator[]<Component_t>(cmp_id).mSelf;
+        return Base_t::template operator[]<Component_t>(cmp_key).mSelf;
     }
 
     template<class K>
