@@ -176,7 +176,7 @@ public:
     template<class T> using ProxyEntity_t = Identifier_t<ECSManager_t, T>;
 
     template<class EntitySignature_t, class... Arguments_t> constexpr auto
-    CreateEntity(Arguments_t&&... args) -> ProxyEntity_t<EntitySignature_t>
+    CreateEntity(Arguments_t&&... args)
     {
         using RequiredEntity_t = Entity_t<EntitySignature_t>;
         using ArgsTypes = TMPL::TypeList_t<typename std::remove_reference_t<Arguments_t>::type...>;
@@ -206,19 +206,18 @@ public:
             }
         };
 
-        return ProxyEntity_t<EntitySignature_t>{
-            constructor_key, std::apply(create_entity, create_components()).mID };
+        return std::apply(create_entity, create_components());
     }
 
-    template<class PrxEnt_t>
-    void Destroy(const PrxEnt_t prx_ent)
+    template<class EntKey_t>
+    void Destroy(EntKey_t& ent_key)
     {
         auto cmp_ids {
-            mEntityMan.Destroy(ID_t<Entity_t<typename PrxEnt_t::type>, IndexSize_t>{ prx_ent.GetID() })
+            mEntityMan.Destroy(std::move(ent_key))
         };
 
         std::apply([&](auto&&... keys) {
-                    mComponentMan.Destroy(keys...);
+                    (mComponentMan.Destroy(keys), ...);
                 }, cmp_ids);
     }
 

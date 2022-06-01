@@ -63,6 +63,7 @@ public:
 
     template<class T> constexpr iterator<T> erase                          (const_iterator<T> pos) { return GetRequiredContainer<T>().erase(pos); }
     template<class T> constexpr iterator<T> erase(const_iterator<T> first, const_iterator<T> last) { return GetRequiredContainer<T>().erase(first, last); }
+    template<class T, class U> constexpr auto erase(U&& u) { return GetRequiredContainer<T>().erase(u); }
 
     template<class T> constexpr void push_back(const T& value) { GetRequiredContainer<T>().push_back(value); }
     template<class T> constexpr void push_back     (T&& value) { GetRequiredContainer<T>().push_back(value); }

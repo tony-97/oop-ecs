@@ -1,47 +1,37 @@
 #pragma once
 
-#include "helpers.hpp"
 #include "struct_of_arrays.hpp"
-#include "entity.hpp"
-#include <tuple>
+#include "helpers.hpp"
+#include "ecs_map.hpp"
 
 namespace ECS
 {
 
 // Entities is a variadic template argument that each one is a list of components
 template<class... Entities>
-struct EntityManager_t final : SoA_t<Vector_t, Entities...>, Uncopyable_t
+struct EntityManager_t final : SoA_t<ECSMap_t, Entities...>, Uncopyable_t
 {
 public:
-
                       using Self_t           = EntityManager_t;
-                      using Base_t           = SoA_t<Vector_t, Entities...>;
+                      using Base_t           = SoA_t<ECSMap_t, Entities...>;
                       using ConstructorKey_t = Key_t<Self_t>;
-    template<class T> using EntityID_t       = ID_t<T, IndexSize_t>;
+    template<class T> using EntityID_t       = typename ECSMap_t<T>::Key_t;
 
-    constexpr explicit EntityManager_t() : Base_t{  }
-    {
-    }
+    constexpr explicit EntityManager_t() : Base_t{  } {  }
 
     template<class RequiredEntity_t, class... ComponentIDs_t> constexpr auto
     Create(ComponentIDs_t&&... ids)
     {
-        EntityID_t<RequiredEntity_t> ent_id {
-            Base_t::template size<RequiredEntity_t>() };
-
-        Base_t::template emplace_back<RequiredEntity_t>(ids...);
-
-        return ent_id;
+        return Base_t::template emplace_back<RequiredEntity_t>(ids...);
     }
 
-    template<class RequiredEntity_t> constexpr auto
-    Destroy(EntityID_t<RequiredEntity_t> ent_id)
+    template<class K> constexpr auto
+    Destroy(K&& ent_id)
     {
-        auto& ent  { Base_t::template operator[]<RequiredEntity_t>(ent_id.mID) };
-        auto& last { Base_t::template back<RequiredEntity_t>() };
+        using RequiredEntity_t = typename K::value_type;
+        auto& ent  { Base_t::template operator[]<RequiredEntity_t>(ent_id) };
         auto cmp_ids { ent.GetComponentIDs() };
-        ent = std::move(last);
-        Base_t::template pop_back<RequiredEntity_t>();
+        Base_t::template erase<RequiredEntity_t>(ent_id);
 
         return cmp_ids;
     }
