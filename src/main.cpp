@@ -23,13 +23,13 @@ struct PhysicsComponent_t
 };
 
 constexpr auto rendereable_printer [[maybe_unused]] = [](const auto& ren, const auto& pos, auto ent) {
-    std::cout << "[Found entity ID    ]: " << ent.GetID() << std::endl;
+    std::cout << "[Found entity ID    ]: " << ent.GetIndex() << std::endl;
     std::cout << "[RenderComponent    ]: " << ren.c << std::endl;
     std::cout << "[PositionComponent_t]: " << "X: " << pos.x << " Y: " << pos.y << std::endl << std::endl;
 };
 
 constexpr auto movable_printer [[maybe_unused]] = [](auto& phy, auto& pos, auto ent) {
-    std::cout << "[Found entity ID    ]: " << ent.GetID() << std::endl;
+    std::cout << "[Found entity ID    ]: " << ent.GetIndex() << std::endl;
     std::cout << "[PhysicsComponent_t ]: " << "VX: " << phy.vx  << " VY: " << phy.vy << std::endl;
     std::cout << "[PositionComponent_t]: " << "X: "  << pos.x   << " Y: "  << pos.y  << std::endl << std::endl;
 };
