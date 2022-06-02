@@ -138,12 +138,12 @@ struct ECSMap_t
 
         constexpr difference_type operator-(const iterator_t& it)
         {
-            return (mSlot - it.mSlot) / sizeof(Slot_t<T>);
+            return mSlot - it.mSlot;
         }
 
         constexpr friend bool operator==(const iterator_t& lhs, const iterator_t& rhs)
         {
-            return lhs.mSlot != rhs.mSlot;
+            return lhs.mSlot == rhs.mSlot;
         }
 
         constexpr friend bool operator!=(const iterator_t& lhs, const iterator_t& rhs)
