@@ -40,6 +40,7 @@ MKDIR := mkdir -p
 # Program for remove a file
 RM := rm -fR
 
+
 #==============================================================================
 # Compile only macro
 #==============================================================================
@@ -67,7 +68,7 @@ endef
 #==============================================================================
 # $(1) : Full source filename
 define SOURCES_2_INCLUDE
-$(subst .c,.h,$(subst .cc,.hh,$(subst .cxx,.hxx,$(subst .cpp,.hpp,$(1)))))
+$(wildcard $(subst .c,.h,$(subst .cc,.hh,$(subst .cxx,.hxx,$(subst .cpp,.hpp,$(1))))))
 endef
 
 #==============================================================================
@@ -85,11 +86,11 @@ endef
 #==============================================================================
 # Find sources files on a folder with the given pattern
 #==============================================================================
-# $(1) : Path for search sources
-# $(2) : Patern to search
-define FIND_SOURCES
-$(shell find $(1) -type f -iname $(2))
-endef
+# $(1) : Paths for search sources
+# $(2) : Paterns to search
+# old implementation
+# $(shell find $(1) -type f -iname $(2))
+FIND = $(foreach d,$(wildcard $(1:=/*)),$(call FIND,$d,$2) $(filter $(subst *,%,$2),$d))
 
 # The path where put the executable and the library
 BUILD_PATH ?= .
@@ -107,18 +108,17 @@ SRC_DIR ?= src
 OBJ_DIR ?= obj
 
 # Sources to compile
-SRCS_CXX := $(call FIND_SOURCES,$(SRC_DIR),"*.cpp") \
-			$(call FIND_SOURCES,$(SRC_DIR),"*.cxx") \
-			$(call FIND_SOURCES,$(SRC_DIR),"*.cc")
-
-SRCS_C := $(call FIND_SOURCES,$(SRC_DIR),"*.c")
+SRCS_CXX := $(call FIND,$(SRC_DIR),*.cpp *.cc *.cxx)
+SRCS_C   := $(call FIND,$(SRC_DIR),*.c)
 
 # Sources converted to object file
 OBJS_CXX := $(call CXXSOURCES_2_OBJS,$(SRCS_CXX))
 OBJS_C   := $(call CSOURCES_2_OBJS,$(SRCS_C))
 
 # Sources directorie tree
-SRCS_DIRS := $(shell find $(SRC_DIR)/ -type d)
+# old implementation
+# SRCS_DIRS := $(shell find $(SRC_DIR)/ -type d)
+SRCS_DIRS := $(sort $(dir $(call FIND,$(SRC_DIR),*.cpp *.hpp *.cc *.hh *.cxx *.c *.h)))
 
 # Objects directories same structure as src/ dir
 OBJS_DIRS := $(call SOURCE_PATH_2_OBJ,$(SRCS_DIRS))
