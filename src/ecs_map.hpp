@@ -166,13 +166,13 @@ struct ECSMap_t
         Key_t key { mFreeIndex };
         if (mFreeIndex == mLastIndex) {
             auto& slot { mData.emplace_back(std::forward<Args_t>(args)...) };
-            slot.mIndex = slot.mEraseIndex = mLastIndex;
+            slot.mIndex = slot.mEraseIndex = mFreeIndex;
             ++mFreeIndex;
         } else {
             new (&mData[mLastIndex].mValue) T { std::forward<Args_t>(args)... };
-            mFreeIndex = mData[mFreeIndex].mIndex;
-            mData[mFreeIndex].mIndex = mLastIndex;
             mData[mLastIndex].mEraseIndex = mFreeIndex;
+            mData[mFreeIndex].mIndex = mLastIndex;
+            mFreeIndex = mData[mFreeIndex].mIndex;
         }
         ++mLastIndex;
 
@@ -181,7 +181,7 @@ struct ECSMap_t
 
     constexpr void erase(const Key_t& slot)
     {
-        assert(slot.mIndex != std::numeric_limits<std::size_t>::max());
+        assert(slot.mIndex != std::numeric_limits<size_type>::max());
 
         --mLastIndex;
         mData[mData[slot.mIndex].mIndex].mValue.~T();
