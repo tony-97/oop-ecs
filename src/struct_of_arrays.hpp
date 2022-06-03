@@ -16,9 +16,9 @@ struct SoA_t
 public:
     template<class Type_t> using value_type             = typename Container_t<Type_t>::value_type;
     template<class Type_t> using size_type              = typename Container_t<Type_t>::size_type;
-    template<class Type_t> using difference_type        = typename Container_t<Type_t>::size_type;
-    template<class Type_t> using reference              = value_type<Type_t>&;
-    template<class Type_t> using const_reference        = const value_type<Type_t>&;
+    template<class Type_t> using difference_type        = typename Container_t<Type_t>::difference_type;
+    template<class Type_t> using reference              = typename Container_t<Type_t>::reference;
+    template<class Type_t> using const_reference        = typename Container_t<Type_t>::const_reference;
     template<class Type_t> using pointer                = typename Container_t<Type_t>::pointer;
     template<class Type_t> using const_pointer          = typename Container_t<Type_t>::const_pointer;
     template<class Type_t> using iterator               = typename Container_t<Type_t>::iterator;
@@ -33,17 +33,17 @@ public:
         CheckIfTypesAreUnique();
     }
 
-    template<class T, class U> constexpr reference<T>&       operator[](const U& index) { return GetRequiredContainer<T>()[index]; }
-    template<class T, class U> constexpr const_reference<T>& operator[](const U& index) const { return GetRequiredContainer<T>()[index]; }
+    template<class T, class U> constexpr reference<T>       operator[](const U& u) { return GetRequiredContainer<T>()[u]; }
+    template<class T, class U> constexpr const_reference<T> operator[](const U& u) const { return GetRequiredContainer<T>()[u]; }
 
-    template<class T> constexpr reference<T>&       at(size_type<T> index)       { return GetRequiredContainer<T>().at(index); }
-    template<class T> constexpr const_reference<T>& at(size_type<T> index) const { return GetRequiredContainer<T>().at(index); }
+    template<class T, class U> constexpr reference<T>       at(const U& u)       { return GetRequiredContainer<T>().at(u); }
+    template<class T, class U> constexpr const_reference<T> at(const U& u) const { return GetRequiredContainer<T>().at(u); }
 
-    template<class T> constexpr reference<T>&       front()       { return GetRequiredContainer<T>().front(); }
-    template<class T> constexpr const_reference<T>& front() const { return GetRequiredContainer<T>().front(); }
+    template<class T> constexpr reference<T>       front()       { return GetRequiredContainer<T>().front(); }
+    template<class T> constexpr const_reference<T> front() const { return GetRequiredContainer<T>().front(); }
 
-    template<class T> constexpr reference<T>&       back()       { return GetRequiredContainer<T>().back(); }
-    template<class T> constexpr const_reference<T>& back() const { return GetRequiredContainer<T>().back(); }
+    template<class T> constexpr reference<T>       back()       { return GetRequiredContainer<T>().back(); }
+    template<class T> constexpr const_reference<T> back() const { return GetRequiredContainer<T>().back(); }
 
     template<class T> constexpr pointer<T>       data()       { return GetRequiredContainer<T>().data(); }
     template<class T> constexpr const_pointer<T> data() const { return GetRequiredContainer<T>().data(); }
@@ -76,7 +76,7 @@ public:
     template<class T> constexpr void resize                            (size_type<T> count) { GetRequiredContainer<T>().resize(count); }
     template<class T> constexpr void resize(size_type<T> count, const value_type<T>& value) { GetRequiredContainer<T>().resize(count, value); }
 
-    template<class T> constexpr static size_type<T> get_type_index() { return TMPL::IndexOf_v<T, Ts...>; }
+    template<class T> constexpr static size_type<T> get_container_index() { return TMPL::IndexOf_v<T, Ts...>; }
 
     template<class T> constexpr const_iterator<T> begin () const { return GetRequiredContainer<T>().begin(); }
     template<class T> constexpr const_iterator<T> cbegin() const { return GetRequiredContainer<T>().cbegin(); }
