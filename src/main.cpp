@@ -52,6 +52,14 @@ int main()
     auto ent3 = ecs_man.CreateEntity<Movable_t>(pos_args, phy_args);
     auto ent4 = ecs_man.CreateEntity<BasicCharacter_t>(Args::Arguments_t{ Args::For_v<RenderComponent_t>, 'd' });
     
+    using list1 = TMPL::TypeList_t<int, double, float>;
+    using list2 = TMPL::TypeList_t<int, double>;
+
+    static_assert(std::is_same_v<TMPL::TypeList_t<float>, TMPL::Sequence::RemoveTypes_t<list1, list2>>, "NO!");
+    static_assert(std::is_same_v<TMPL::TypeList_t<>, TMPL::Sequence::RemoveTypes_t<list2, list1>>, "NO!");
+
+    ecs_man.TransformTo<Renderable_t>(ent4);
+
     std::cout << "Iterating over renderables..." << std::endl;
     ecs_man.ForEachEntity<Renderable_t>(rendereable_printer);
     
