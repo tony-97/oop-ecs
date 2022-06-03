@@ -6,6 +6,7 @@
 
 #include "arguments.hpp"
 #include "component_manager.hpp"
+#include "ecs_map.hpp"
 #include "entity.hpp"
 #include "entity_manager.hpp"
 #include "helpers.hpp"
@@ -57,9 +58,6 @@ struct Derived_t : RawDerived<std::conjunction_v<IsBase<Ts>...>, Ts...> {  };
 template<class... EntitySignatures_t>
 using ComponentsFrom_t = Seq::UniqueTypes_t<Seq::SeqCat_t<typename EntitySignatures_t::type...>>;
 
-template<class Obj_t, class T>
-using AddConstIf_t = std::conditional_t<std::is_const_v<std::remove_reference_t<Obj_t>>, std::add_const_t<T>, T>;
-
 template<class... EntitySignatures_t>
 struct ECSManager_t
 {
@@ -77,7 +75,7 @@ private:
                 auto it  { ecs_man.mEntityMan.template rbegin<RequiredEntity_t>() };
                 auto end { ecs_man.mEntityMan.template rend<RequiredEntity_t>() };
                 for (; it != end; ++it) {
-                    std::apply(cb, ecs_man.template GetArgumentsFor<SystemSignature_t>(std::next(it).base()));
+                    std::apply(cb, ecs_man.template GetArgumentsFor<typename SystemSignature_t::type>(std::next(it).base()));
                 }
             }
         }
@@ -107,6 +105,23 @@ private:
         {
             return std::tuple {
                 mECSMan.mComponentMan.template Create<Components_t>()... };
+        }
+    };
+
+    struct ComponentDestroyer_t
+    {
+    private:
+        ECSManager_t& mECSMan {  };
+    public:
+        constexpr explicit ComponentDestroyer_t(ECSManager_t& ecs_man)
+            : mECSMan { ecs_man } {  }
+
+        template<class... Components_t, class ComponentKeys_t>
+        constexpr auto operator()(ComponentKeys_t&& cmp_keys) const
+        {
+            (mECSMan.mComponentMan.Destroy(std::get<typename ECSMap_t<ComponentWrapper<Components_t>>::Key_t>
+                                           (std::forward<ComponentKeys_t>(cmp_keys))),
+             ...);
         }
     };
 
@@ -219,10 +234,50 @@ public:
                 }, cmp_ids);
     }
 
-    template<class DestEnt_t, class SrcEnt_t>
-    void TransformTo(SrcEnt_t&& ent)
+    template<class DestSig_t, class EntKey_t, class... Args_t>
+    constexpr auto TransformTo(EntKey_t&& ent_key, Args_t&&... args)
     {
-        TMPL::Sequence::RemoveTypes_t<DestEnt_t, SrcEnt_t>{};
+        using SrcEnt_t   = typename std::remove_reference_t<EntKey_t>::value_type;
+        using DestEnt_t  = Entity_t<DestSig_t>;
+        using DestCmps_t = ComponentsFrom_t<DestSig_t>;
+        using SrcCmps_t  = ComponentsFrom_t<typename SrcEnt_t::signature_type>;
+        using RmCmps_t   = Seq::RemoveTypes_t<SrcCmps_t, DestCmps_t>;
+        using MkCmps_t   = Seq::RemoveTypes_t<DestCmps_t, SrcCmps_t>;
+
+        using ArgsTypes = TMPL::TypeList_t<typename std::remove_reference_t<Args_t>::type...>;
+        using RemainingComponents_t = Seq::RemoveTypes_t<MkCmps_t, ArgsTypes>;
+        static_assert(Seq::IsUnique_v<ArgsTypes>, "Component arguments must be unique.");
+        static_assert(TMPL::IsSubsetOf_v<ArgsTypes, MkCmps_t>,
+                      "Components arguments does not match the requiered components");
+
+        auto cmp_ids {
+            mEntityMan.Destroy(ent_key)
+        };
+
+        auto create_entity {
+            [&](auto&&... ids) {
+                return mEntityMan.template
+                    Create<DestEnt_t>(std::forward<decltype(ids)>(ids)...);
+            }
+        };
+
+        using ComponentIDs_t = typename DestEnt_t::ComponentIDs_t;
+
+        auto create_components { 
+            [&]() {
+                return ConvertTo<ComponentIDs_t>(
+                        std::tuple_cat(std::tuple{
+                            CreateComponent(std::forward<Args_t>(args))...
+                            },
+                            Seq::Unpacker_t<RemainingComponents_t>::Call(ComponentCreator_t{ *this }),
+                            cmp_ids)
+                        );
+            }
+        };
+
+        Seq::Unpacker_t<RmCmps_t>::Call(ComponentDestroyer_t{ *this }, cmp_ids);
+
+        return std::apply(create_entity, create_components());
     }
 
     template<class EntitySignature_t, class Callable_t>
@@ -242,8 +297,6 @@ public:
     }
 
 private:
-
-    static constexpr inline Key_t<ECSManager_t> constructor_key {  };
 
     ComponentMan_t mComponentMan {  };
     EntityMan_t mEntityMan {  };
