@@ -198,7 +198,7 @@ struct ECSMap_t
         mFreeIndex = slot.mIndex;
     }
 
-    constexpr size_type size() const { return mData.size(); }
+    constexpr size_type size() const { return mLastIndex; }
 
     constexpr void erase(const_iterator it)
     {
