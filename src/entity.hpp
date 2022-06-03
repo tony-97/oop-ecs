@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include <sequence.hpp>
+#include <utility>
 
 #include "component_manager.hpp"
 #include "type_aliases.hpp"
@@ -33,12 +34,14 @@ struct Entity_t final : Uncopyable_t
 {
 public:
 
+    using signature_type = Signature_t;
+
     using Components_t   = typename Signature_t::type;
     using ComponentIDs_t = TMPL::Sequence::ConvertTo_t<std::tuple<>,
                                                       ComponentsToIDs_t<Components_t>>;
 
     template<class... IDs_t>
-    constexpr explicit Entity_t(IDs_t&&... ids)   : mComponentIDs { ids... } {  }
+    constexpr explicit Entity_t(IDs_t&&... ids)   : mComponentIDs { std::forward<IDs_t>(ids)... } {  }
     constexpr explicit Entity_t(Entity_t&& other) : mComponentIDs { std::move(other.mComponentIDs) } {  }
 
     constexpr Entity_t& operator=(Entity_t&& other)
