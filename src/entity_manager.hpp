@@ -27,7 +27,7 @@ public:
         return Base_t::template emplace_back<RequiredEntity_t>(ids...);
     }
 
-    template<class K> constexpr auto
+    template<class K> [[nodiscard]] constexpr auto 
     Destroy(K&& ent_id)
     {
         using RequiredEntity_t = typename K::value_type;
