@@ -34,6 +34,13 @@ constexpr auto movable_printer [[maybe_unused]] = [](auto& phy, auto& pos, auto 
     std::cout << "[PositionComponent_t]: " << "X: "  << pos.x   << " Y: "  << pos.y  << std::endl << std::endl;
 };
 
+constexpr auto basic_character_printer [[maybe_unused]] = [](auto& ren, auto& pos, auto& phy, auto ent) {
+    std::cout << "[Found entity ID    ]: " << ent.GetIndex() << std::endl;
+    std::cout << "[RenderComponent    ]: " << ren.c << std::endl;
+    std::cout << "[PhysicsComponent_t ]: " << "VX: " << phy.vx  << " VY: " << phy.vy << std::endl;
+    std::cout << "[PositionComponent_t]: " << "X: "  << pos.x   << " Y: "  << pos.y  << std::endl << std::endl;
+};
+
 int main()
 {
     using Renderable_t     = ECS::Base_t<RenderComponent_t, PositionComponent_t>;
@@ -47,42 +54,31 @@ int main()
     Args::Arguments_t pos_args { Args::For_v<PositionComponent_t>, 1, 2 };
     Args::Arguments_t phy_args { Args::For_v<PhysicsComponent_t>, 3, 4 };
 
-    auto ent1 = ecs_man.CreateEntity<Renderable_t>(ren_args1);
-    auto ent2 = ecs_man.CreateEntity<Renderable_t>(ren_args2, pos_args);
-    auto ent3 = ecs_man.CreateEntity<Movable_t>(pos_args, phy_args);
-    auto ent4 = ecs_man.CreateEntity<BasicCharacter_t>(Args::Arguments_t{ Args::For_v<RenderComponent_t>, 'd' });
-    
-    using list1 = TMPL::TypeList_t<int, double, float>;
-    using list2 = TMPL::TypeList_t<int, double>;
+    auto ent1 [[maybe_unused]] = ecs_man.CreateEntity<Renderable_t>(ren_args1);
+    auto ent2 [[maybe_unused]] = ecs_man.CreateEntity<Renderable_t>(ren_args2, pos_args);
+    auto ent3 [[maybe_unused]] = ecs_man.CreateEntity<Movable_t>(pos_args, phy_args);
+    auto ent4 [[maybe_unused]] = ecs_man.CreateEntity<BasicCharacter_t>(Args::Arguments_t{ Args::For_v<RenderComponent_t>, 'd' });
 
-    static_assert(std::is_same_v<TMPL::TypeList_t<float>, TMPL::Sequence::RemoveTypes_t<list1, list2>>, "NO!");
-    static_assert(std::is_same_v<TMPL::TypeList_t<>, TMPL::Sequence::RemoveTypes_t<list2, list1>>, "NO!");
+    std::cout << "Iterating over renderables..." << std::endl;
+    ecs_man.ForEachEntity<Renderable_t>(rendereable_printer);
 
+    std::cout << "Iterating over movables..." << std::endl;
+    ecs_man.ForEachEntity<Movable_t>(movable_printer);
+
+    std::cout << "Iterating over basic characters..." << std::endl;
+    ecs_man.ForEachEntity<BasicCharacter_t>(basic_character_printer);
+
+    std::cout << "===Transforming ent4 aka basic_character to renderable===" << std::endl;
     ecs_man.TransformTo<Renderable_t>(ent4);
 
     std::cout << "Iterating over renderables..." << std::endl;
     ecs_man.ForEachEntity<Renderable_t>(rendereable_printer);
-    
+
     std::cout << "Iterating over movables..." << std::endl;
     ecs_man.ForEachEntity<Movable_t>(movable_printer);
-    
-    std::cout << "==Destroying ent4===" << std::endl;
-    ecs_man.Destroy(ent4);
-    
-    std::cout << "==Destroying ent1===" << std::endl;
-    ecs_man.Destroy(ent1);
-    
-    std::cout << "==Destroying ent3===" << std::endl;
-    ecs_man.Destroy(ent3);
-    
-    std::cout << "==Destroying ent2===" << std::endl;
-    ecs_man.Destroy(ent2);
-    
-    std::cout << "Iterating over renderables..." << std::endl;
-    ecs_man.ForEachEntity<Renderable_t>(rendereable_printer);
-    
-    std::cout << "Iterating over movables..." << std::endl;
-    ecs_man.ForEachEntity<Movable_t>(movable_printer);
+
+    std::cout << "Iterating over basic characters..." << std::endl;
+    ecs_man.ForEachEntity<BasicCharacter_t>(basic_character_printer);
 
     return 0;
 }
