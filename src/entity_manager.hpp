@@ -30,7 +30,7 @@ public:
     template<class K> [[nodiscard]] constexpr auto 
     Destroy(K&& ent_id)
     {
-        using RequiredEntity_t = typename K::value_type;
+        using RequiredEntity_t = typename std::remove_reference_t<K>::value_type;
         auto& ent  { Base_t::template operator[]<RequiredEntity_t>(std::forward<K>(ent_id)) };
         auto cmp_ids { ent.GetComponentIDs() };
         Base_t::template erase<RequiredEntity_t>(std::forward<K>(ent_id));
