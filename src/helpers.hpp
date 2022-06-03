@@ -150,4 +150,8 @@ using IsConstructible = IsConstructibleIMPL<std::void_t<>, T, Args...>;
 template <class T, class... Args>
 constexpr static inline auto IsConstructible_v { IsConstructible<T, Args...>::value };
 
+// Adds const if Obj_t is const
+template<class Obj_t, class T>
+using AddConstIf_t = std::conditional_t<std::is_const_v<std::remove_reference_t<Obj_t>>, std::add_const_t<T>, T>;
+
 } // namespace ECS
