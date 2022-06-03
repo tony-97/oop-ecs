@@ -8,31 +8,34 @@
 
 #include <cassert>
 
+#include "helpers.hpp"
+
 namespace ECS
 {
 
 template<class T>
-struct Slot_t
-{
-    std::size_t mIndex {  };
-    std::size_t mEraseIndex {  };
-    T mValue {  };
-
-    template<class... Args_t> constexpr
-    Slot_t(Args_t&&... args)
-        : mValue { std::forward<Args_t>(args)... } {  }
-};
-
-template<class T>
 struct ECSMap_t
 {
-    using value_type = T;
-    using size_type  = typename std::vector<T>::size_type;
-    using difference_type = std::ptrdiff_t;
-    using reference = value_type&;
-    using const_reference = const value_type&;
-    using pointer = value_type*;
-    using const_pointer = const pointer;
+    using value_type      = typename std::vector<T>::value_type;
+    using size_type       = typename std::vector<T>::size_type;
+    using difference_type = typename std::vector<T>::difference_type;
+    using reference       = typename std::vector<T>::reference;
+    using const_reference = typename std::vector<T>::const_reference;
+    using pointer         = typename std::vector<T>::pointer;
+    using const_pointer   = typename std::vector<T>::const_pointer;
+
+    struct Slot_t
+    {
+        using value_type = T;
+
+        size_type mIndex {  };
+        size_type mEraseIndex {  };
+        T mValue {  };
+
+        template<class... Args_t> constexpr
+        Slot_t(Args_t&&... args)
+            : mValue { std::forward<Args_t>(args)... } {  }
+    };
 
     struct Key_t
     {
@@ -60,10 +63,9 @@ struct ECSMap_t
     template<class Value_t>
     struct iterator_t
     {
+        using slot_ptr = AddConstIf_t<Value_t, Slot_t>*;
 
-        using slot_ptr = std::conditional_t<std::is_const_v<Value_t>, const Slot_t<T>, Slot_t<T>>*;
-
-        using iterator_category = std::bidirectional_iterator_tag;
+        using iterator_category = std::random_access_iterator_tag;
         using difference_type   = std::ptrdiff_t;
         using value_type        = Value_t;
         using pointer           = value_type*;
@@ -160,6 +162,8 @@ struct ECSMap_t
     using reverse_iterator       = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+    constexpr explicit ECSMap_t() = default;
+
     template<class... Args_t> 
     [[nodiscard]] constexpr Key_t emplace_back(Args_t&&... args)
     {
@@ -194,6 +198,8 @@ struct ECSMap_t
         mFreeIndex = slot.mIndex;
     }
 
+    constexpr size_type size() const { return mData.size(); }
+
     constexpr void erase(const_iterator it)
     {
         erase(get_key(it));
@@ -204,16 +210,31 @@ struct ECSMap_t
         return { mData[get_index(it)].mEraseIndex };
     }
 
-    constexpr T& operator[](const Key_t& slot)
+    constexpr Key_t get_key(size_type pos) const
     {
-        assert(slot.mIndex != std::numeric_limits<std::size_t>::max());
+        return { mData[pos].mEraseIndex };
+    }
+
+    constexpr reference operator[](const Key_t& slot)
+    {
+        assert(slot.mIndex != std::numeric_limits<size_type>::max());
         return mData[mData[slot.mIndex].mIndex].mValue;
     }
 
-    const T& operator[](const Key_t& slot) const
+    constexpr const_reference operator[](const Key_t& slot) const
     {
-        assert(slot.mIndex != std::numeric_limits<std::size_t>::max());
+        assert(slot.mIndex != std::numeric_limits<size_type>::max());
         return mData[mData[slot.mIndex].mIndex].mValue;
+    }
+
+    constexpr reference operator[](size_type pos)
+    {
+        return mData[pos].mValue;
+    }
+
+    constexpr const_reference operator[](size_type pos) const
+    {
+        return mData[pos].mValue;
     }
 
     iterator               begin()         { return { mData.data() }; }
@@ -235,9 +256,9 @@ private:
         return static_cast<size_type>(std::distance(begin(), it));
     }
 
-    std::size_t mFreeIndex {  };
-    std::size_t mLastIndex {  };
-    std::vector<Slot_t<T>> mData {  };
+    size_type mFreeIndex {  };
+    size_type mLastIndex {  };
+    std::vector<Slot_t> mData {  };
 };
 
 } // namespace ECS
