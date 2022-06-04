@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iterator>
 #include <tmpl.hpp>
 #include <tuple>
@@ -72,11 +74,16 @@ private:
             using RequiredEntity_t = Entity_t<EntitySignature_t>;
             if constexpr (TMPL::IsSubsetOf_v<typename SystemSignature_t::type,
                                              typename EntitySignature_t::type>) {
-                auto it  { ecs_man.mEntityMan.template rbegin<RequiredEntity_t>() };
-                auto end { ecs_man.mEntityMan.template rend<RequiredEntity_t>() };
-                for (; it != end; ++it) {
-                    std::apply(cb, ecs_man.template GetArgumentsFor<typename SystemSignature_t::type>(std::next(it).base()));
+                auto i { ecs_man.mEntityMan.template size<RequiredEntity_t>() };
+                while (i--) {
+                    const ID_t<EntitySignature_t, std::size_t> idx { i };
+                    std::apply(cb, ecs_man.template GetArgumentsFor<typename SystemSignature_t::type>(idx));
                 }
+                //auto it  { ecs_man.mEntityMan.template rbegin<RequiredEntity_t>() };
+                //auto end { ecs_man.mEntityMan.template rend<RequiredEntity_t>() };
+                //for (; it != end; ++it) {
+                //    std::apply(cb, ecs_man.template GetArgumentsFor<typename SystemSignature_t::type>(std::next(it).base()));
+                //}
             }
         }
     };
@@ -86,9 +93,11 @@ private:
         template<class... Args_t, class It_t, class ECSMan_t>
         constexpr auto operator()(It_t&& it, ECSMan_t&& ecs_man) const
         {
-            auto ent_key { ecs_man.mEntityMan.template GetKey(it) };
+            using EntSig_t = typename std::remove_reference_t<It_t>::type;
+            auto ent_key { ecs_man.mEntityMan.template GetKey<EntSig_t>(it.mID) };
+            auto& ent { ecs_man.mEntityMan.template operator[]<Entity_t<EntSig_t>>(it.mID) };
             return std::tuple<AddConstIf_t<ECSMan_t, Args_t>&..., decltype(ent_key)>{
-                ecs_man.GetComponent(it->template GetComponentID<Args_t>())...,
+                ecs_man.GetComponent(ent.template GetComponentID<Args_t>())...,
                 ent_key };
         }
     };
