@@ -125,7 +125,7 @@ OBJS_DIRS := $(call SOURCE_PATH_2_OBJ,$(SRCS_DIRS))
 
 .PHONY: clean cleanall
 
-$(BUILD_PATH)/$(EXEC_NAME): $(OBJS_DIRS) $(OBJS_CXX) $(OBJS_C)
+$(BUILD_PATH)/$(EXEC_NAME): $(BUILD_PATH) $(OBJS_DIRS) $(OBJS_CXX) $(OBJS_C)
 	$(LD) -o $@ $(OBJS_CXX) $(OBJS_C) $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_PATH)/$(LIB_NAME): $(OBJS_DIRS) $(OBJS_CXX) $(OBJS_C)
@@ -141,6 +141,9 @@ $(foreach C_FILE,$(SRCS_C),\
 $(eval \
 $(call COMPILE_ONLY,$(call CSOURCES_2_OBJS,$(C_FILE)),\
 $(C_FILE),$(call SOURCES_2_INCLUDE,$(C_FILE)),$(CC),$(CPPFLAGS),$(CFLAGS))))
+
+$(BUILD_PATH):
+	$(MKDIR) $(BUILD_PATH)
 
 $(OBJS_DIRS):
 	$(MKDIR) $(OBJS_DIRS)
@@ -160,4 +163,4 @@ clean:
 	$(RM) $(OBJS_DIRS)
 
 cleanall: clean
-	$(RM) $(BUILD_PATH)/$(EXEC_NAME) $(BUILD_PATH)/$(LIB_NAME)
+	$(RM) $(OBJS_DIRS) $(BUILD_PATH)
