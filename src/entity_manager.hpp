@@ -1,5 +1,6 @@
 #pragma once
 
+#include "entity.hpp"
 #include "struct_of_arrays.hpp"
 #include "helpers.hpp"
 #include "ecs_map.hpp"
@@ -46,6 +47,14 @@ public:
                 GetRequiredContainer<typename std::remove_reference_t<It_t>::value_type>() };
 
         return cont.get_key(std::forward<It_t>(it));
+    }
+
+    template<class EntSig_t> constexpr auto 
+    GetKey(std::size_t i) const
+    {
+        auto& cont { Base_t::template GetRequiredContainer<Entity_t<EntSig_t>>() };
+
+        return cont.get_key(i);
     }
 
 private:
