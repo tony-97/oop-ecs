@@ -1,10 +1,7 @@
 #include <iostream>
-#include <vector>
 
 #include "ecs_manager.hpp"
 #include "arguments.hpp"
-
-#include "struct_of_arrays.hpp"
 
 struct RenderComponent_t
 {
