@@ -1,11 +1,6 @@
 #pragma once
 
-#include <variant>
-#include <array>
-
-#include <sequence.hpp>
-
-#include "type_aliases.hpp"
+#include <tmpl/sequence.hpp>
 
 namespace ECS
 {

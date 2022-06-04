@@ -1,21 +1,15 @@
 #pragma once
 
-#include <array>
-#include <type_traits>
+#include <tmpl/sequence.hpp>
 
-#include <sequence.hpp>
-#include <utility>
-
-#include "component_manager.hpp"
-#include "type_aliases.hpp"
-#include "helpers.hpp"
 #include "ecs_map.hpp"
 
 namespace ECS
 {
 
-template<class Components_t>
-struct ComponentsToIDs;
+template<class T> struct ComponentWrapper;
+
+template<class Components_t> struct ComponentsToIDs;
 
 template<template<class...> class Components_t, class... Ts>
 struct ComponentsToIDs<Components_t<Ts...>>

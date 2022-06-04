@@ -1,7 +1,5 @@
 #pragma once
 
-#include "helpers.hpp"
-#include "type_aliases.hpp"
 #include "struct_of_arrays.hpp"
 #include "ecs_map.hpp"
 

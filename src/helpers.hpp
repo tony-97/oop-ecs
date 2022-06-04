@@ -1,9 +1,6 @@
 #pragma once
 
-#include <type_traits>
-#include <utility>
-
-#include "sequence.hpp"
+#include <tmpl/sequence.hpp>
 
 namespace ECS
 {

@@ -1,17 +1,10 @@
 #pragma once
 
-#include <iterator>
-#include <tmpl.hpp>
-#include <tuple>
-#include <type_traits>
-#include <utility>
+#include <tmpl/tmpl.hpp>
 
 #include "arguments.hpp"
 #include "component_manager.hpp"
-#include "ecs_map.hpp"
-#include "entity.hpp"
 #include "entity_manager.hpp"
-#include "helpers.hpp"
 
 namespace ECS
 {

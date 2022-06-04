@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "ecs_manager.hpp"
-#include "arguments.hpp"
 
 struct RenderComponent_t
 {
