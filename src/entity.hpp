@@ -7,32 +7,26 @@
 namespace ECS
 {
 
-template<class T> struct ComponentWrapper;
+namespace Seq = TMPL::Sequence;
 
-template<class Components_t> struct ComponentsToIDs;
-
-template<template<class...> class Components_t, class... Ts>
-struct ComponentsToIDs<Components_t<Ts...>>
-{
-    using type = TMPL::TypeList_t<typename ECSMap_t<ComponentWrapper<Ts>>::Key_t...>;
-};
-
-template<class Components_t>
-using ComponentsToIDs_t = typename ComponentsToIDs<Components_t>::type;
-
-// TODO: create a second template parameter for the component id type
-// TODO: sort the ids passed in the constructor in any order for construct the
-//       component ids
-template<class Signature_t>
+template<class Sign_t, template<class> class CmptKey_t>
 struct Entity_t final : Uncopyable_t
 {
+    template<class Cmps_t> struct ComponentKeys;
+
+    template<template<class...> class Cmps_t, class... Ts>
+    struct ComponentKeys<Cmps_t<Ts...>>
+    {
+        using type = TMPL::TypeList_t<CmptKey_t<Ts>...>;
+    };
+    
+    template<class Cmps_t>
+    using ComponentKeys_t = typename ComponentKeys<Cmps_t>::type;
 public:
-
-    using signature_type = Signature_t;
-
-    using Components_t   = typename Signature_t::type;
-    using ComponentIDs_t = TMPL::Sequence::ConvertTo_t<std::tuple<>,
-                                                      ComponentsToIDs_t<Components_t>>;
+    using Signature_t    = Sign_t;
+    using Components_t   = typename Sign_t::type;
+    using ComponentIDs_t = Seq::ConvertTo_t<std::tuple<>,
+                                            ComponentKeys_t<Components_t>>;
 
     template<class... IDs_t>
     constexpr explicit Entity_t(IDs_t&&... ids)   : mComponentIDs { std::forward<IDs_t>(ids)... } {  }
@@ -45,10 +39,10 @@ public:
         return *this;
     }
 
-    template<class Component_t>
+    template<class Cmpt_t>
     constexpr const auto& GetComponentID() const
     {
-        return std::get<typename ECSMap_t<ComponentWrapper<Component_t>>::Key_t>(mComponentIDs);
+        return std::get<CmptKey_t<Cmpt_t>>(mComponentIDs);
     }
 
     constexpr auto GetComponentIDs() const -> const ComponentIDs_t&

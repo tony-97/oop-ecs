@@ -4,7 +4,6 @@
 
 namespace ECS
 {
-
 ///////////////////////////////////////////////////////////////////////////////
 // SameAsConstMemFunc
 ///////////////////////////////////////////////////////////////////////////////
@@ -80,10 +79,10 @@ struct TupleConverter_t
     }
 };
 
-template<class DestTuple_t, class SrcTuple_t>
-constexpr auto ConvertTo(SrcTuple_t&& tup)
+template<class DestTypes, class SrcTuple_t>
+constexpr auto TupleAs(SrcTuple_t&& tup)
 {
-    return TMPL::Sequence::Unpacker_t<DestTuple_t>::Call(TupleConverter_t{  }, std::forward<SrcTuple_t>(tup));
+    return TMPL::Sequence::Unpacker_t<DestTypes>::Call(TupleConverter_t{  }, std::forward<SrcTuple_t>(tup));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -122,7 +121,7 @@ public:
     using type = T;
     using id_type = ID_t;
 
-    constexpr ID_t GetID() const { return mID; }
+    constexpr const ID_t& GetID() const { return mID; }
 private:
     constexpr explicit Identifier_t(Key_t<Manager_t>, ID_t id)
         : mID { id } {  }
@@ -149,6 +148,7 @@ constexpr static inline auto IsConstructible_v { IsConstructible<T, Args...>::va
 
 // Adds const if Obj_t is const
 template<class Obj_t, class T>
-using AddConstIf_t = std::conditional_t<std::is_const_v<std::remove_reference_t<Obj_t>>, std::add_const_t<T>, T>;
-
+using AddConstIf_t = std::conditional_t<std::is_const_v<std::remove_reference_t<Obj_t>>,
+                                        std::add_const_t<T>,
+                                        T>;
 } // namespace ECS
