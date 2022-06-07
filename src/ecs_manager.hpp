@@ -6,66 +6,19 @@
 #include "arguments.hpp"
 #include "component_manager.hpp"
 #include "entity_manager.hpp"
+#include "helpers.hpp"
+#include "interface.hpp"
 
 namespace ECS
 {
 
-namespace Seq = TMPL::Sequence;
-
-template<bool b, class... Ts>
-struct RawBase
-{
-    static_assert(b, "Types are not unique.");
-};
-
-template<class... Ts>
-struct RawBase<true, Ts...>
-{
-    using type = Seq::UniqueTypes_t<TMPL::TypeList_t<Ts...>>;
-};
-
-template<class... Ts>
-struct Base_t : RawBase<TMPL::AreUnique_v<Ts...>, Ts...> {  };
-
-template<bool b, class... Ts>
-struct RawDerived
-{
-    static_assert(b, "Derived not derived from Base.");
-};
-
-template<class... Ts>
-struct RawDerived<true, Ts...>
-{
-    using type = Seq::UniqueTypes_t<Seq::SeqCat_t<Ts...>>;
-};
-
-template<class T>
-struct IsBase : std::false_type {  };
-
-template<template<class...> class T, class... Ts>
-struct IsBase<T<Ts...>> : std::bool_constant<std::is_same_v<T<Ts...>, Base_t<Ts...>>> {  };
-
-template<class T>
-constexpr static inline auto IsBase_v { IsBase<T>::value };
-
-template<class... Ts>
-struct Derived_t : RawDerived<std::conjunction_v<IsBase<Ts>...>, Ts...> {  };
-
 template<class... EntitySignatures_t>
 using ComponentsFrom_t = Seq::UniqueTypes_t<Seq::SeqCat_t<typename EntitySignatures_t::type...>>;
-
-//template<class EntSig_t, class EntKey_t>
-//struct StaticCast
-//: std::bool_constant<std::is_same_v<Entity_t<EntSig_t>,
-//                                    typename std::remove_reference_t<EntKey_t>::value_type>>
-//{  };
-
-//template<class EntSig_t, class EntKey_t>
-//constexpr bool StaticCast_v { StaticCast<EntSig_t, EntKey_t>::value };
 
 template<class... EntSigs_t>
 struct ECSManager_t
 {
+
 private:
     using ComponentList_t = ComponentsFrom_t<EntSigs_t...>;
     using EntityList_t    = TMPL::TypeList_t<EntSigs_t...>;
@@ -77,7 +30,8 @@ private:
     using EntityMan_t = EntityManager_t<ComponentKey_t, EntSigs_t...>;
 
     template<class T>
-    using EntityKey_t = typename EntityMan_t::template EntityKey_t<T>;
+    using EntityIndex_t = Identifier_t<ECSManager_t, T,
+                                       typename EntityMan_t::template EntityID_t<T>>;
 
     template<class T>
     using entity_type = typename EntityMan_t::template entity_type<T>;
@@ -86,14 +40,14 @@ private:
     struct EntityTraversal_t
     {
         template<class EntSig_t, class Callback_t, class ECSMan_t>
-        constexpr auto operator()(Callback_t&& cb, ECSMan_t&& ecs_man) const -> void
+        constexpr auto operator()(Callback_t&& cb, ECSMan_t& ecs_man) const -> void
         {
             if constexpr (TMPL::IsSubsetOf_v<typename SysSig_t::type,
                                              typename EntSig_t::type>) {
                 auto i { ecs_man.mEntityMan.template size<EntSig_t>() };
                 while (i--) {
-                    const ID_t<EntSig_t, std::size_t> idx { i };
-                    std::apply(cb, ecs_man.template GetArgumentsFor<typename SysSig_t::type>(idx));
+                    EntityIndex_t<EntSig_t> ent_idx { mConstructorKey_t, i };
+                    std::apply(cb, ecs_man.template GetArgumentsFor<typename SysSig_t::type>(ent_idx));
                 }
             }
         }
@@ -101,15 +55,15 @@ private:
 
     struct SystemArguments_t
     {
-        template<class... Args_t, class It_t, class ECSMan_t>
-        constexpr auto operator()(It_t&& it, ECSMan_t&& ecs_man) const
+        template<class... Args_t, class EntIdx_t, class ECSMan_t>
+        constexpr auto operator()(EntIdx_t ent_idx, ECSMan_t&& ecs_man) const
         {
-            using EntSig_t = typename std::remove_reference_t<It_t>::type;
-            auto ent_key { ecs_man.mEntityMan.template GetKey<EntSig_t>(it.mID) };
-            auto& ent { ecs_man.mEntityMan.template GetEntity<EntSig_t>(it.mID) };
-            return std::tuple<AddConstIf_t<ECSMan_t, Args_t>&..., decltype(ent_key)>{
+            using EntSig_t = typename EntIdx_t::type;
+
+            auto& ent { ecs_man.mEntityMan.template GetEntity<EntSig_t>(ent_idx.mID) };
+            return std::tuple<AddConstIf_t<ECSMan_t, Args_t>&..., EntIdx_t>{
                 ecs_man.mComponentMan.GetComponent(ent.template GetComponentID<Args_t>())...,
-                ent_key };
+                ent_idx };
         }
     };
 
@@ -146,10 +100,9 @@ private:
     };
 
     template<class CmptArgs_t> constexpr auto
-    CreateComponent(CmptArgs_t&& arg)
+    CreateComponent(const CmptArgs_t& arg)
     {
-        using RequieredComponent_t =
-            typename std::remove_reference_t<CmptArgs_t>::type;
+        using RequieredComponent_t = typename CmptArgs_t::type;
 
         auto create_cmp {
             [&](auto&&... args) {
@@ -158,29 +111,38 @@ private:
             }
         };
 
-        return Args::apply(create_cmp, std::forward<CmptArgs_t>(arg));
+        return Args::apply(create_cmp, arg);
     }
 
-    template<class Signature_t, class It_t>
-    constexpr auto GetArgumentsFor(It_t&& it) const
+    template<class Signature_t, class EntIdx_t>
+    constexpr auto GetArgumentsFor(EntIdx_t&& it) const
     {
         return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
-                                                  std::forward<It_t>(it),
+                                                  std::forward<EntIdx_t>(it),
                                                   *this);
     }
 
-    template<class Signature_t, class It_t>
-    constexpr auto GetArgumentsFor(It_t&& it)
+    template<class Signature_t, class EntIdx_t>
+    constexpr auto GetArgumentsFor(EntIdx_t it)
     {
         return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
-                                                  std::forward<It_t>(it),
+                                                  std::forward<EntIdx_t>(it),
                                                   *this);
     }
 public:
+    template<class EntSig_t, class EntIdx_t>
+    struct StaticCast
+    : std::bool_constant<std::is_same_v<EntSig_t,
+                         typename std::remove_reference_t<EntIdx_t>::type>>
+                          {  };
+
+    template<class EntSig_t, class EntKey_t>
+    static inline constexpr bool StaticCast_v { StaticCast<EntSig_t, EntKey_t>::value };
+
     template<class EntSig_t, class... Args_t> constexpr auto
-    CreateEntity(Args_t&&... args)
+    CreateEntity(const Args_t&... args) -> void
     {
-        using ArgsTypes = TMPL::TypeList_t<typename std::remove_reference_t<Args_t>::type...>;
+        using ArgsTypes = TMPL::TypeList_t<typename Args_t::type...>;
         using RequiredComponents_t  = ComponentsFrom_t<EntSig_t>;
         using RemainingComponents_t = Seq::RemoveTypes_t<RequiredComponents_t, ArgsTypes>;
         static_assert(Seq::IsUnique_v<ArgsTypes>, "Component arguments must be unique.");
@@ -188,8 +150,8 @@ public:
                       "Components arguments does not match the requiered components");
 
         auto create_entity {
-            [&](auto&&... ids) {
-                return mEntityMan.template
+            [&](auto&&... ids) -> void {
+                mEntityMan.template
                     Create<EntSig_t>(std::forward<decltype(ids)>(ids)...);
             }
         };
@@ -199,21 +161,22 @@ public:
             [&]() {
                 return TupleAs<ComponentKeys_t>(
                         std::tuple_cat(std::tuple{
-                            CreateComponent(std::forward<Args_t>(args))...
+                            CreateComponent(args)...
                             },
                             Seq::Unpacker_t<RemainingComponents_t>::Call(ComponentCreator_t{ *this }))
                         );
             }
         };
 
-        return std::apply(create_entity, create_components());
+        std::apply(create_entity, create_components());
     }
 
-    template<class EntKey_t>
-    void Destroy(EntKey_t& ent_key)
+    template<class EntIdx_t>
+    constexpr auto Destroy(EntIdx_t ent_idx) -> void
     {
+        using EntSig_t = typename EntIdx_t::type;
         auto cmp_ids {
-            mEntityMan.Destroy(std::move(ent_key))
+            mEntityMan.template Destroy<EntSig_t>(ent_idx.mID)
         };
 
         std::apply([&](auto&&... keys) {
@@ -221,12 +184,12 @@ public:
                 }, cmp_ids);
     }
 
-    template<class DestSig_t, class EntKey_t, class... Args_t>
-    constexpr auto TransformTo(EntKey_t&& ent_key, Args_t&&... args)
+    template<class DestSig_t, class EntIdx_t, class... Args_t>
+    constexpr auto TransformTo(EntIdx_t ent_idx, const Args_t&... args) -> void
     {
-        using SrcEnt_t   = typename std::remove_reference_t<EntKey_t>::value_type;
+        using SrcSig_t   = typename EntIdx_t::type;
         using DestCmps_t = ComponentsFrom_t<DestSig_t>;
-        using SrcCmps_t  = ComponentsFrom_t<typename SrcEnt_t::Signature_t>;
+        using SrcCmps_t  = ComponentsFrom_t<SrcSig_t>;
         using RmCmps_t   = Seq::RemoveTypes_t<SrcCmps_t, DestCmps_t>;
         using MkCmps_t   = Seq::RemoveTypes_t<DestCmps_t, SrcCmps_t>;
 
@@ -237,11 +200,11 @@ public:
                       "Components arguments does not match the requiered components");
 
         auto cmp_ids {
-            mEntityMan.Destroy(ent_key)
+            mEntityMan.template Destroy<SrcSig_t>(ent_idx)
         };
 
         auto create_entity {
-            [&](auto&&... ids) {
+            [&](auto&&... ids) -> void {
                 return mEntityMan.template
                     Create<DestSig_t>(std::forward<decltype(ids)>(ids)...);
             }
@@ -252,7 +215,7 @@ public:
             [&]() {
                 return TupleAs<ComponentKeys_t>(
                         std::tuple_cat(std::tuple{
-                            CreateComponent(std::forward<Args_t>(args))...
+                            CreateComponent(args)...
                             },
                             Seq::Unpacker_t<RemainingComponents_t>::Call(ComponentCreator_t{ *this }),
                             cmp_ids)
@@ -262,7 +225,22 @@ public:
 
         Seq::Unpacker_t<RmCmps_t>::Call(ComponentDestroyer_t{ *this }, cmp_ids);
 
-        return std::apply(create_entity, create_components());
+        std::apply(create_entity, create_components());
+    }
+
+    template<class Cmpt_t, class EntIdx_t> constexpr const auto&
+    GetComponent(EntIdx_t ent_idx) const
+    {
+        using EntSig_t = typename EntIdx_t::type;
+        auto& ent { mEntityMan.template GetEntity<EntSig_t>(ent_idx.mID) };
+        
+        return mComponentMan.GetComponent(ent.template GetComponentID<Cmpt_t>());;
+    }
+
+    template<class Cmpt_t, class EntIdx_t> constexpr auto&
+    GetComponent(EntIdx_t ent_idx)
+    {
+        return SameAsConstMemFunc(*this, &ECSManager_t::GetComponent<Cmpt_t, EntIdx_t>, ent_idx);
     }
 
     template<class EntSig_t, class Callable_t>
@@ -281,6 +259,7 @@ public:
                                          *this);
     }
 private:
+    static inline constexpr Key_t<ECSManager_t> mConstructorKey_t {  };
     ComponentMan_t mComponentMan {  };
     EntityMan_t mEntityMan {  };
 };
