@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <type_traits>
 
 #include "helpers.hpp"
 
@@ -69,7 +70,7 @@ struct ArgumentsSize<Arguments_t<T, Args_t...>>
     : std::integral_constant<std::size_t, sizeof...(Args_t)> {  };
 
 template<class Args_t>
-static inline constexpr auto ArgumentsSize_v { ArgumentsSize<Args_t>::value };
+static inline constexpr auto ArgumentsSize_v { ArgumentsSize<std::remove_const_t<Args_t>>::value };
 
 template<std::size_t N, class Args_t>
 struct ArgumentsElemnt;
@@ -78,7 +79,7 @@ template<std::size_t N, class T, class FirstArg_t, class... Rest_t>
 struct ArgumentsElemnt<N, Arguments_t<T, FirstArg_t, Rest_t...>>
     : ArgumentsElemnt<N - 1, Arguments_t<T, Rest_t...>>
 {
-    static_assert(ArgumentsSize_v<Arguments_t<FirstArg_t, Rest_t...>> <= N,
+    static_assert(ArgumentsSize_v<Arguments_t<T, FirstArg_t, Rest_t...>> > N,
                   "Index out of bounds.");
 };
 
