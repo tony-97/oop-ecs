@@ -28,11 +28,11 @@ public:
         CheckIfTypesAreUnique();
     }
 
-    template<class T, class U> constexpr reference<T>       operator[](const U& u) { return GetRequiredContainer<T>()[u]; }
-    template<class T, class U> constexpr const_reference<T> operator[](const U& u) const { return GetRequiredContainer<T>()[u]; }
+    template<class T, class U> constexpr reference<T>       operator[](U&& u) { return GetRequiredContainer<T>()[std::forward<U>(u)]; }
+    template<class T, class U> constexpr const_reference<T> operator[](U&& u) const { return GetRequiredContainer<T>()[std::forward<U>(u)]; }
 
-    template<class T, class U> constexpr reference<T>       at(const U& u)       { return GetRequiredContainer<T>().at(u); }
-    template<class T, class U> constexpr const_reference<T> at(const U& u) const { return GetRequiredContainer<T>().at(u); }
+    template<class T, class U> constexpr reference<T>       at(U&& u)       { return GetRequiredContainer<T>().at(std::forward<U>(u)); }
+    template<class T, class U> constexpr const_reference<T> at(U&& u) const { return GetRequiredContainer<T>().at(std::forward<U>(u)); }
 
     template<class T> constexpr reference<T>       front()       { return GetRequiredContainer<T>().front(); }
     template<class T> constexpr const_reference<T> front() const { return GetRequiredContainer<T>().front(); }
