@@ -1,4 +1,5 @@
 # Makefile config
+export WFLAGS    := -Wno-missing-braces -Wmissing-field-initializers
 export CPPFLAGS  := -Isrc -Iexternal
 export EXEC_NAME ?= game
 export CXXFLAGS  := -std=c++17 -fno-rtti -fno-exceptions
