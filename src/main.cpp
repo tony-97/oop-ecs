@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "arguments.hpp"
 #include "ecs_manager.hpp"
 
 struct RenderComponent_t
@@ -73,5 +74,8 @@ int main()
     std::cout << "Iterating over basic characters..." << std::endl;
     ecs_man.ForEachEntity<BasicCharacter_t>(basic_character_printer);
 
+    int i;
+    Args::Arguments_t args { Args::For_v<int>, 3 };
+    static_assert(std::is_same_v<Args::Arguments_t<int, int&&>, decltype(args)>, "NO");
     return 0;
 }
