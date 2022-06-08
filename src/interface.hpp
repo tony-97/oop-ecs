@@ -2,6 +2,7 @@
 
 #include <tmpl/sequence.hpp>
 #include <tmpl/tmpl.hpp>
+#include <type_traits>
 
 namespace ECS
 {
@@ -46,5 +47,16 @@ constexpr static inline auto IsBase_v { IsBase<T>::value };
 
 template<class... Ts>
 struct Derived_t : RawDerived<std::conjunction_v<IsBase<Ts>...>, Ts...> {  };
+
+template<class Sig_t, class EntSig_t>
+struct IsInstanceOf;
+
+template<template<class...> class Sig_t, template<class...> class EntSig_t, class... Sigs_t, class... EntSigs_t>
+struct IsInstanceOf<Sig_t<Sigs_t...>, EntSig_t<EntSigs_t...>> 
+    : std::bool_constant<std::disjunction_v<std::is_same<Sig_t<Sigs_t...>, EntSig_t<EntSigs_t...>>,
+                                            TMPL::IsOneOf<EntSig_t<EntSigs_t...>, Sigs_t...>>> {  };
+
+template<class Sig_t, class EntSig_t>
+constexpr static inline bool IsInstanceOf_v { IsInstanceOf<Sig_t, typename std::remove_reference_t<EntSig_t>::type>::value };
 
 } // namespace ECS
