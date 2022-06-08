@@ -30,13 +30,14 @@ public:
     template<class EntSig_t> [[nodiscard]] constexpr auto 
     Destroy(EntityID_t<EntSig_t> ent_key)
     {
-        auto& ent  { Base_t::template operator[]<entity_type<EntSig_t>>(ent_key) };
+        using RequieredEntity = entity_type<EntSig_t>;
+        auto& ent  { Base_t::template operator[]<RequieredEntity>(ent_key) };
         auto cmp_keys { ent.GetComponentIDs() };
-        auto& last_ent { Base_t::template back<entity_type<EntSig_t>>() };
+        auto& last_ent { Base_t::template back<RequieredEntity>() };
 
         ent = std::move(last_ent);
 
-        Base_t::template pop_back();
+        Base_t::template pop_back<RequieredEntity>();
 
         return cmp_keys;
     }

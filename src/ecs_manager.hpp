@@ -130,15 +130,6 @@ private:
                                                   *this);
     }
 public:
-    template<class EntSig_t, class EntIdx_t>
-    struct StaticCast
-    : std::bool_constant<std::is_same_v<EntSig_t,
-                         typename std::remove_reference_t<EntIdx_t>::type>>
-                          {  };
-
-    template<class EntSig_t, class EntKey_t>
-    static inline constexpr bool StaticCast_v { StaticCast<EntSig_t, EntKey_t>::value };
-
     template<class EntSig_t, class... Args_t> constexpr auto
     CreateEntity(const Args_t&... args) -> void
     {
@@ -200,7 +191,7 @@ public:
                       "Components arguments does not match the requiered components");
 
         auto cmp_ids {
-            mEntityMan.template Destroy<SrcSig_t>(ent_idx)
+            mEntityMan.template Destroy<SrcSig_t>(ent_idx.mID)
         };
 
         auto create_entity {
