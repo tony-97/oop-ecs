@@ -7,7 +7,6 @@
 #include "component_manager.hpp"
 #include "entity_manager.hpp"
 #include "helpers.hpp"
-#include "interface.hpp"
 
 namespace ECS
 {
