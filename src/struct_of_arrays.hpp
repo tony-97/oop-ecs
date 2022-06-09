@@ -6,7 +6,7 @@ namespace ECS
 {
 
 template<template<class...>class Container_t, class... Ts>
-struct SoA_t
+struct SoA_t : Container_t<Ts>...
 {
 public:
     template<class Type_t> using value_type             = typename Container_t<Type_t>::value_type;
@@ -21,9 +21,9 @@ public:
     template<class Type_t> using reverse_iterator       = typename Container_t<Type_t>::reverse_iterator;
     template<class Type_t> using const_reverse_iterator = typename Container_t<Type_t>::const_reverse_iterator;
 
-    using TypeFields = std::tuple<Container_t<Ts>...>;
+    //using TypeFields = std::tuple<Container_t<Ts>...>;
 
-    constexpr explicit SoA_t() : mTypeTable { Container_t<Ts>{  }... }
+    constexpr explicit SoA_t() : Container_t<Ts>{  }...
     {
         CheckIfTypesAreUnique();
     }
@@ -95,7 +95,7 @@ protected:
     GetRequiredContainer() const -> const Container_t<RequiredType_t>&
     {
         CheckIfTypeExists<RequiredType_t>();
-        return std::get<Container_t<RequiredType_t>>(mTypeTable);
+        return static_cast<const Container_t<RequiredType_t>&>(*this);
     }
 
     template<class RequiredType_t> constexpr auto
@@ -116,7 +116,7 @@ protected:
                       "The requiered type does not exists in this instance.");
     }
 
-    TypeFields mTypeTable {  };
+    //TypeFields mTypeTable {  };
 };
 
 } // namespace ECS
