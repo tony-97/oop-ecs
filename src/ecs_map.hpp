@@ -173,8 +173,9 @@ struct ECSMap_t
         } else {
             new (&mData[mLastIndex].mValue) T { std::forward<Args_t>(args)... };
             mData[mLastIndex].mEraseIndex = mFreeIndex;
+            auto next_free_index { mData[mFreeIndex].mIndex };
             mData[mFreeIndex].mIndex = mLastIndex;
-            mFreeIndex = mData[mFreeIndex].mIndex;
+            mFreeIndex = next_free_index;
         }
         ++mLastIndex;
 
