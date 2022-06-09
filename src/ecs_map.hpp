@@ -166,7 +166,7 @@ struct ECSMap_t
     [[nodiscard]] constexpr Key_t emplace_back(Args_t&&... args)
     {
         Key_t key { mFreeIndex };
-        if (mFreeIndex == mLastIndex) {
+        if (mFreeIndex == mLastIndex && mLastIndex == mData.size()) {
             auto& slot { mData.emplace_back(std::forward<Args_t>(args)...) };
             slot.mIndex = slot.mEraseIndex = mFreeIndex;
             ++mFreeIndex;
