@@ -178,8 +178,8 @@ public:
     constexpr auto TransformTo(EntIdx_t ent_idx, const Args_t&... args) -> void
     {
         using SrcSig_t   = typename EntIdx_t::type;
-        using DestCmps_t = ComponentsFrom_t<DestSig_t>;
-        using SrcCmps_t  = ComponentsFrom_t<SrcSig_t>;
+        using DestCmps_t = typename DestSig_t::type;
+        using SrcCmps_t  = typename SrcSig_t::type;
         using RmCmps_t   = Seq::RemoveTypes_t<SrcCmps_t, DestCmps_t>;
         using MkCmps_t   = Seq::RemoveTypes_t<DestCmps_t, SrcCmps_t>;
 

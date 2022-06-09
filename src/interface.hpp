@@ -33,7 +33,7 @@ struct RawDerived
 template<class... Ts>
 struct RawDerived<true, Ts...>
 {
-    using type = Seq::UniqueTypes_t<Seq::SeqCat_t<Ts...>>;
+    using type = Seq::UniqueTypes_t<Seq::SeqCat_t<typename Ts::type...>>;
 };
 
 template<class T>
