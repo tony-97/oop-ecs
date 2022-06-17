@@ -7,6 +7,7 @@
 #include "component_manager.hpp"
 #include "entity_manager.hpp"
 #include "helpers.hpp"
+#include "interface.hpp"
 
 namespace ECS
 {
@@ -224,13 +225,16 @@ public:
         using EntSig_t = typename EntIdx_t::type;
         auto& ent { mEntityMan.template GetEntity<EntSig_t>(ent_idx.mID) };
         
-        return mComponentMan.GetComponent(ent.template GetComponentID<Cmpt_t>());;
+        return mComponentMan.GetComponent(ent.template GetComponentID<Cmpt_t>());
     }
 
     template<class Cmpt_t, class EntIdx_t> constexpr auto&
     GetComponent(EntIdx_t ent_idx)
     {
-        return SameAsConstMemFunc(*this, &ECSManager_t::GetComponent<Cmpt_t, EntIdx_t>, ent_idx);
+        using EntSig_t = typename EntIdx_t::type;
+        auto& ent { mEntityMan.template GetEntity<EntSig_t>(ent_idx.mID) };
+        
+        return mComponentMan.GetComponent(ent.template GetComponentID<Cmpt_t>());;
     }
 
     template<class EntSig_t, class Callable_t>
