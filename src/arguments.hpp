@@ -60,7 +60,7 @@ struct Arguments_t
 {  };
 
 template<class T, class... Args_t, std::enable_if_t<ECS::IsConstructible_v<T, Args_t...>, bool> = true>
-Arguments_t(For_t<T>, Args_t&&...) -> Arguments_t<T, Args_t...>;
+Arguments_t(For_t<T>, Args_t...) -> Arguments_t<T, Args_t...>;
 
 template<class Args_t>
 struct ArgumentsSize;
