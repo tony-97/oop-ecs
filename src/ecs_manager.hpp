@@ -8,6 +8,8 @@
 #include "entity_manager.hpp"
 #include "helpers.hpp"
 #include "interface.hpp"
+#include "tmpl/sequence.hpp"
+#include "tmpl/type_list.hpp"
 
 namespace ECS
 {
@@ -217,6 +219,22 @@ public:
         Seq::Unpacker_t<RmCmps_t>::Call(ComponentDestroyer_t{ *this }, cmp_ids);
 
         std::apply(create_entity, create_components());
+    }
+
+    template<class BaseSig_t, class EntIdx_t, class... Args_t>
+    constexpr auto AddBase(EntIdx_t ent_idx, Args_t&&... args) -> void
+    {
+        using SrcSig_t = typename EntIdx_t::type;
+        using NewSig_t = Seq::SeqCat_t<SrcSig_t, TMPL::TypeList_t<BaseSig_t>>;
+        
+    }
+
+    template<class BaseSig_t, class EntIdx_t>
+    constexpr auto RemoveBase(EntIdx_t ent_idx) -> void
+    {
+        using SrcSig_t = typename EntIdx_t::type;
+        using NewSig_t = Seq::RemoveTypes_t<SrcSig_t, TMPL::TypeList_t<BaseSig_t>>;
+        static_assert(IsInstanceOf_v<SrcSig_t, BaseSig_t>, "Not base from ent.");
     }
 
     template<class Cmpt_t, class EntIdx_t> constexpr const auto&
