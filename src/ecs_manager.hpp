@@ -1,8 +1,6 @@
 #pragma once
 
-#include <bits/utility.h>
 #include <tmpl/tmpl.hpp>
-#include <type_traits>
 
 #include "arguments.hpp"
 #include "component_manager.hpp"
@@ -14,14 +12,12 @@
 
 namespace ECS
 {
-
 template<class... EntitySignatures_t>
 using ComponentsFrom_t = Seq::UniqueTypes_t<Seq::SeqCat_t<typename EntitySignatures_t::type...>>;
 
 template<class... EntSigs_t>
 struct ECSManager_t
 {
-
 private:
     using ComponentList_t = ComponentsFrom_t<EntSigs_t...>;
     using EntityList_t    = TMPL::TypeList_t<EntSigs_t...>;
@@ -70,21 +66,6 @@ private:
         }
     };
 
-    struct ComponentCreator_t
-    {
-    private:
-        ECSManager_t& mECSMan {  };
-    public:
-        constexpr explicit ComponentCreator_t(ECSManager_t& ecs_man)
-            : mECSMan { ecs_man } {  }
-
-        template<class... Cmps_t> constexpr auto operator()() const
-        {
-            return std::tuple {
-                mECSMan.mComponentMan.template Create<Cmps_t>()... };
-        }
-    };
-
     struct ComponentDestroyer_t
     {
     private:
@@ -117,22 +98,6 @@ private:
         return Args::apply(create_cmp, arg);
     }
 
-    template<class Signature_t, class EntIdx_t>
-    constexpr auto GetArgumentsFor(EntIdx_t&& it) const
-    {
-        return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
-                                                  std::forward<EntIdx_t>(it),
-                                                  *this);
-    }
-
-    template<class Signature_t, class EntIdx_t>
-    constexpr auto GetArgumentsFor(EntIdx_t it)
-    {
-        return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
-                                                  std::forward<EntIdx_t>(it),
-                                                  *this);
-    }
-public:
     template<class EmptyCmps_t, std::size_t... Is, class... Args_t>
     constexpr auto CreateComponentsIMPL(std::index_sequence<Is...>, Args_t&&... args)
     {
@@ -149,6 +114,28 @@ public:
                 std::forward<Args_t>(args)...);
     }
 
+    template<class EntSig_t, class... IDs>
+    constexpr auto CreateEntityIMPL(IDs... ids)
+    {
+        mEntityMan.template Create<EntSig_t>(ids...);
+    }
+
+    template<class Signature_t, class EntIdx_t>
+    constexpr auto GetArgumentsFor(EntIdx_t&& it) const
+    {
+        return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
+                                                  std::forward<EntIdx_t>(it),
+                                                  *this);
+    }
+
+    template<class Signature_t, class EntIdx_t>
+    constexpr auto GetArgumentsFor(EntIdx_t it)
+    {
+        return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
+                                                  std::forward<EntIdx_t>(it),
+                                                  *this);
+    }
+public:
     template<class EntSig_t, class... Args_t> constexpr auto
     CreateEntity(const Args_t&... args) -> void
     {
@@ -159,27 +146,13 @@ public:
         static_assert(TMPL::IsSubsetOf_v<ArgsTypes, RequiredComponents_t>,
                       "Components arguments does not match the requiered components");
 
-        auto create_entity {
-            [&](auto&&... ids) -> void {
-                mEntityMan.template
-                    Create<EntSig_t>(std::forward<decltype(ids)>(ids)...);
-            }
-        };
-
         using ComponentKeys_t = typename entity_type<EntSig_t>::ComponentIDs_t;
-        auto create_components { 
-            [&]() {
-                return TupleAs<ComponentKeys_t>(
-                        std::tuple_cat(std::tuple{
-                            CreateComponent(args)...
-                            },
-                            Seq::Unpacker_t<RemainingComponents_t>::Call(ComponentCreator_t{ *this }))
-                        );
-            }
-        };
 
-        //std::apply(create_entity, create_components());
-        std::apply(create_entity, TupleAs<ComponentKeys_t>(CreateComponents<RemainingComponents_t>(args...)));
+        auto cmp_ids { TupleAs<ComponentKeys_t>(CreateComponents<RemainingComponents_t>(args...)) };
+
+        std::apply([&](auto... ids) {
+                CreateEntityIMPL<EntSig_t>(ids...);
+                }, cmp_ids);
     }
 
     template<class EntIdx_t>
@@ -209,34 +182,20 @@ public:
         static_assert(Seq::IsUnique_v<ArgsTypes>, "Component arguments must be unique.");
         static_assert(TMPL::IsSubsetOf_v<ArgsTypes, MkCmps_t>,
                       "Components arguments does not match the requiered components");
+        using ComponentKeys_t = typename entity_type<DestSig_t>::ComponentIDs_t;
 
-        auto cmp_ids {
+        auto old_ids {
             mEntityMan.template Destroy<SrcSig_t>(ent_idx.mID)
         };
+        auto new_ids { CreateComponents<RemainingComponents_t>(args...) };
 
-        auto create_entity {
-            [&](auto&&... ids) -> void {
-                return mEntityMan.template
-                    Create<DestSig_t>(std::forward<decltype(ids)>(ids)...);
-            }
-        };
+        auto ids { TupleAs<ComponentKeys_t>(std::tuple_cat(new_ids, old_ids)) };
 
-        using ComponentKeys_t = typename entity_type<DestSig_t>::ComponentIDs_t;
-        auto create_components { 
-            [&]() {
-                return TupleAs<ComponentKeys_t>(
-                        std::tuple_cat(std::tuple{
-                            CreateComponent(args)...
-                            },
-                            Seq::Unpacker_t<RemainingComponents_t>::Call(ComponentCreator_t{ *this }),
-                            cmp_ids)
-                        );
-            }
-        };
+        Seq::Unpacker_t<RmCmps_t>::Call(ComponentDestroyer_t{ *this }, old_ids);
 
-        Seq::Unpacker_t<RmCmps_t>::Call(ComponentDestroyer_t{ *this }, cmp_ids);
-
-        std::apply(create_entity, create_components());
+        std::apply([&](auto... ids) {
+                CreateEntityIMPL<DestSig_t>(ids...);
+                }, ids);
     }
 
     template<class BaseSig_t, class EntIdx_t, class... Args_t>
