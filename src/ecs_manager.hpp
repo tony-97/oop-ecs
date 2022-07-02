@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bits/utility.h>
 #include <tmpl/tmpl.hpp>
 #include <type_traits>
 
@@ -132,6 +133,22 @@ private:
                                                   *this);
     }
 public:
+    template<class EmptyCmps_t, std::size_t... Is, class... Args_t>
+    constexpr auto CreateComponentsIMPL(std::index_sequence<Is...>, Args_t&&... args)
+    {
+       return std::tuple {
+           CreateComponent(std::forward<Args_t>(args))..., 
+           CreateComponent(Args::Arguments_t<Seq::TypeAt_t<Is, EmptyCmps_t>>{})... };
+    }
+
+    template<class EmptyCmps_t, class... Args_t>
+    constexpr auto CreateComponents(Args_t&&... args)
+    {
+        return CreateComponentsIMPL<EmptyCmps_t>(
+                std::make_index_sequence<Seq::Size_v<EmptyCmps_t>>{},
+                std::forward<Args_t>(args)...);
+    }
+
     template<class EntSig_t, class... Args_t> constexpr auto
     CreateEntity(const Args_t&... args) -> void
     {
@@ -161,7 +178,8 @@ public:
             }
         };
 
-        std::apply(create_entity, create_components());
+        //std::apply(create_entity, create_components());
+        std::apply(create_entity, TupleAs<ComponentKeys_t>(CreateComponents<RemainingComponents_t>(args...)));
     }
 
     template<class EntIdx_t>
