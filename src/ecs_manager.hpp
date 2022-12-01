@@ -1,14 +1,14 @@
 #pragma once
 
 #include <tmpl/tmpl.hpp>
+#include <tmpl/sequence.hpp>
+#include <tmpl/type_list.hpp>
 
 #include "arguments.hpp"
 #include "component_manager.hpp"
 #include "entity_manager.hpp"
 #include "helpers.hpp"
 #include "interface.hpp"
-#include "tmpl/sequence.hpp"
-#include "tmpl/type_list.hpp"
 
 namespace ECS
 {
