@@ -18,6 +18,8 @@ struct ComponentWrapper_t
 template<class CmptList_t>
 struct ComponentManager_t;
 
+template<class T> using ComponentKey_t = typename ECSMap_t<ComponentWrapper_t<T>>::Key_t;
+
 template<template <class...> class CmptList_t, class... Cmpts_t>
 struct ComponentManager_t<CmptList_t<Cmpts_t...>> final
     : SoA_t<ECSMap_t, ComponentWrapper_t<Cmpts_t>...>, Uncopyable_t
@@ -25,7 +27,6 @@ struct ComponentManager_t<CmptList_t<Cmpts_t...>> final
 public:
                       using Self_t         = ComponentManager_t;
                       using Base_t         = SoA_t<ECSMap_t, ComponentWrapper_t<Cmpts_t>...>;
-    template<class T> using ComponentKey_t = typename ECSMap_t<ComponentWrapper_t<T>>::Key_t;
 
     constexpr explicit ComponentManager_t() : Base_t{  } {  }
 

@@ -22,9 +22,6 @@ private:
     using ComponentList_t = ComponentsFrom_t<EntSigs_t...>;
     using EntityList_t    = TMPL::TypeList_t<EntSigs_t...>;
     using ComponentMan_t  = ComponentManager_t<ComponentList_t>;
-public:
-    template<class T>
-    using ComponentKey_t = typename ComponentMan_t::template ComponentKey_t<T>;
 private:
     using EntityMan_t = EntityManager_t<ComponentKey_t, EntSigs_t...>;
 
