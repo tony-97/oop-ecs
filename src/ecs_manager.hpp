@@ -177,7 +177,7 @@ public:
         using RmCmps_t   = Seq::RemoveTypes_t<SrcCmps_t, DestCmps_t>;
         using MkCmps_t   = Seq::RemoveTypes_t<DestCmps_t, SrcCmps_t>;
 
-        using ArgsTypes = TMPL::TypeList_t<typename std::remove_reference_t<Args_t>::type...>;
+        using ArgsTypes = TMPL::TypeList_t<typename Args_t::type...>;
         using RemainingComponents_t = Seq::RemoveTypes_t<MkCmps_t, ArgsTypes>;
         static_assert(Seq::IsUnique_v<ArgsTypes>, "Component arguments must be unique.");
         static_assert(TMPL::IsSubsetOf_v<ArgsTypes, MkCmps_t>,
