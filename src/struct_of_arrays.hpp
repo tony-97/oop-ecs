@@ -21,8 +21,6 @@ public:
     template<class Type_t> using reverse_iterator       = typename Container_t<Type_t>::reverse_iterator;
     template<class Type_t> using const_reverse_iterator = typename Container_t<Type_t>::const_reverse_iterator;
 
-    //using TypeFields = std::tuple<Container_t<Ts>...>;
-
     constexpr explicit SoA_t() : Container_t<Ts>{  }...
     {
         CheckIfTypesAreUnique();
@@ -115,8 +113,6 @@ protected:
         static_assert(TMPL::IsOneOf_v<Type_t, Ts...>,
                       "The requiered type does not exists in this instance.");
     }
-
-    //TypeFields mTypeTable {  };
 };
 
 } // namespace ECS
