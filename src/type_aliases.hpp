@@ -3,7 +3,8 @@
 #include <tuple>
 #include <vector>
 
-namespace ECS {
+namespace ECS
+{
 
 template<class T>
 using Vector_t = std::vector<T>;
