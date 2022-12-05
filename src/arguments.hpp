@@ -20,7 +20,7 @@ using ArgumentsElemnt_t = typename ArgumentsElemnt<N, Args_t>::type;
 // TODO support for lvalue xvalue
 template<std::size_t N, class T, class... Args_t> constexpr auto
 get(const Arguments_t<T, Args_t...>& args)
--> const ArgumentsElemnt_t<N, Arguments_t<T, Args_t...>>&;
+-> decltype(auto);
 
 namespace IMPL
 {
