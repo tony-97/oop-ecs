@@ -2,7 +2,6 @@
 
 #include "entity.hpp"
 #include "struct_of_arrays.hpp"
-#include "ecs_map.hpp"
 #include "type_aliases.hpp"
 
 namespace ECS
