@@ -3,6 +3,7 @@
 #include <tmpl/tmpl.hpp>
 #include <tmpl/sequence.hpp>
 #include <tmpl/type_list.hpp>
+#include <type_traits>
 
 #include "arguments.hpp"
 #include "component_manager.hpp"
@@ -14,6 +15,20 @@ namespace ECS
 {
 template<class... EntitySignatures_t>
 using ComponentsFrom_t = Seq::UniqueTypes_t<Seq::SeqCat_t<typename EntitySignatures_t::type...>>;
+
+template<class Fn_t, class... Args_t>
+struct IsSystemCallable;
+
+template<class Fn_t, template<class...> class Sig_t, class...Sigs_t, class EntIdx_t>
+struct IsSystemCallable<Fn_t, Sig_t<Sigs_t...>, EntIdx_t>
+: std::bool_constant<std::is_invocable_v<Fn_t, Sigs_t&..., EntIdx_t>> {  };
+
+template<class Fn_t, template<class...> class Sig_t, class...Sigs_t>
+struct IsSystemCallable<Fn_t, Sig_t<Sigs_t...>>
+: std::bool_constant<std::is_invocable_v<Fn_t, Sigs_t&...>> {  };
+
+template<class Fn_t, class... Args_t>
+static inline constexpr auto IsSystemCallable_v { IsSystemCallable<Fn_t, Args_t...>::value };
 
 template<class... EntSigs_t>
 struct ECSManager_t
@@ -38,12 +53,17 @@ private:
         template<class EntSig_t, class Callback_t, class ECSMan_t>
         constexpr auto operator()(Callback_t&& cb, ECSMan_t& ecs_man) const -> void
         {
-            if constexpr (TMPL::IsSubsetOf_v<typename SysSig_t::type,
-                                             typename EntSig_t::type>) {
+            if constexpr (ECS::IsInstanceOf_v<SysSig_t, EntSig_t>) {
                 auto i { ecs_man.mEntityMan.template size<EntSig_t>() };
                 while (i--) {
                     EntityIndex_t<EntSig_t> ent_idx { mConstructorKey_t, i };
-                    std::apply(cb, ecs_man.template GetArgumentsFor<typename SysSig_t::type>(ent_idx));
+                    if constexpr (IsSystemCallable_v<Callback_t, typename SysSig_t::type, EntityIndex_t<EntSig_t>>) {
+                        std::apply(cb, ecs_man.template GetArgumentsFor<typename SysSig_t::type>(ent_idx));
+                    } else if constexpr (IsSystemCallable_v<std::remove_reference_t<Callback_t>, typename SysSig_t::type>) {
+                        std::apply(cb, ecs_man.template GetComponentsFor<typename SysSig_t::type>(ent_idx));
+                    } else {
+                        std::apply(cb, std::tuple { ent_idx });
+                    }
                 }
             }
         }
@@ -60,6 +80,19 @@ private:
             return std::tuple<AddConstIf_t<ECSMan_t, Args_t>&..., EntIdx_t>{
                 ecs_man.mComponentMan.GetComponent(ent.template GetComponentID<Args_t>())...,
                 ent_idx };
+        }
+    };
+
+    struct SystemComponents_t
+    {
+        template<class... Args_t, class EntIdx_t, class ECSMan_t>
+        constexpr auto operator()(EntIdx_t ent_idx, ECSMan_t&& ecs_man) const
+        {
+            using EntSig_t = typename EntIdx_t::type;
+
+            auto& ent { ecs_man.mEntityMan.template GetEntity<EntSig_t>(ent_idx.mID) };
+            return std::tuple<AddConstIf_t<ECSMan_t, Args_t>&...> {
+                ecs_man.mComponentMan.GetComponent(ent.template GetComponentID<Args_t>())... };
         }
     };
 
@@ -112,9 +145,9 @@ private:
     }
 
     template<class EntSig_t, class... IDs>
-    constexpr auto CreateEntityIMPL(IDs... ids)
+    constexpr const auto& CreateEntityIMPL(IDs... ids)
     {
-        mEntityMan.template Create<EntSig_t>(ids...);
+        return mEntityMan.template Create<EntSig_t>(ids...);
     }
 
     template<class Signature_t, class EntIdx_t>
@@ -132,9 +165,25 @@ private:
                                                   std::forward<EntIdx_t>(it),
                                                   *this);
     }
+
+    template<class Signature_t, class EntIdx_t>
+    constexpr auto GetComponentsFor(EntIdx_t&& it) const
+    {
+        return Seq::Unpacker_t<Signature_t>::Call(SystemComponents_t{  },
+                                                  std::forward<EntIdx_t>(it),
+                                                  *this);
+    }
+
+    template<class Signature_t, class EntIdx_t>
+    constexpr auto GetComponentsFor(EntIdx_t it)
+    {
+        return Seq::Unpacker_t<Signature_t>::Call(SystemComponents_t{  },
+                                                  std::forward<EntIdx_t>(it),
+                                                  *this);
+    }
 public:
-    template<class EntSig_t, class... Args_t> constexpr auto
-    CreateEntity(const Args_t&... args) -> void
+    template<class EntSig_t, class... Args_t> constexpr const auto&
+    CreateEntity(const Args_t&... args)
     {
         using ArgsTypes = TMPL::TypeList_t<typename Args_t::type...>;
         using RequiredComponents_t  = ComponentsFrom_t<EntSig_t>;
@@ -147,9 +196,9 @@ public:
 
         auto cmp_ids { TupleAs<ComponentKeys_t>(CreateComponents<RemainingComponents_t>(args...)) };
 
-        std::apply([&](auto... ids) {
-                CreateEntityIMPL<EntSig_t>(ids...);
-                }, cmp_ids);
+        return std::apply([&](auto... ids) {
+                    CreateEntityIMPL<EntSig_t>(ids...);
+                    }, cmp_ids);
     }
 
     template<class EntIdx_t>
@@ -166,7 +215,7 @@ public:
     }
 
     template<class DestSig_t, class EntIdx_t, class... Args_t>
-    constexpr auto TransformTo(EntIdx_t ent_idx, const Args_t&... args) -> void
+    constexpr const auto& TransformTo(EntIdx_t ent_idx, const Args_t&... args)
     {
         using SrcSig_t   = typename EntIdx_t::type;
         using DestCmps_t = typename DestSig_t::type;
@@ -190,9 +239,9 @@ public:
 
         Seq::Unpacker_t<RmCmps_t>::Call(ComponentDestroyer_t{ *this }, old_ids);
 
-        std::apply([&](auto... ids) {
-                CreateEntityIMPL<DestSig_t>(ids...);
-                }, ids);
+        return std::apply([&](auto... ids) {
+                    CreateEntityIMPL<DestSig_t>(ids...);
+                    }, ids);
     }
 
     template<class BaseSig_t, class EntIdx_t, class... Args_t>
@@ -227,6 +276,16 @@ public:
         auto& ent { mEntityMan.template GetEntity<EntSig_t>(ent_idx.mID) };
         
         return mComponentMan.GetComponent(ent.template GetComponentID<Cmpt_t>());;
+    }
+
+    template<class Cmpt_t> constexpr const Cmpt_t&
+    GetComponent(ComponentKey_t<Cmpt_t> cmp_key) const {
+        return mComponentMan.GetComponent(cmp_key);
+    }
+
+    template<class Cmpt_t> constexpr Cmpt_t&
+    GetComponent(ComponentKey_t<Cmpt_t> cmp_key) {
+        return mComponentMan.GetComponent(cmp_key);
     }
 
     template<class EntSig_t, class Callable_t>
