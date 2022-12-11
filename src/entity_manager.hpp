@@ -19,11 +19,11 @@ public:
 
     constexpr explicit EntityManager_t() : Base_t{  } {  }
 
-    template<class EntSig_t, class... CmptKeys_t> constexpr const auto&
-    Create(CmptKeys_t&&... keys)
+    template<class EntSig_t, class... CmptKeys_t> constexpr auto
+    Create(CmptKeys_t&&... keys) -> const auto&
     {
         return Base_t::template
-            emplace_back<entity_type<EntSig_t>>(std::forward<CmptKeys_t>(keys)...);
+                emplace_back<entity_type<EntSig_t>>(std::forward<CmptKeys_t>(keys)...);
     }
 
     template<class EntSig_t> [[nodiscard]] constexpr auto 

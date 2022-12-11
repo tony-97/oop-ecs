@@ -145,7 +145,7 @@ private:
     }
 
     template<class EntSig_t, class... IDs>
-    constexpr const auto& CreateEntityIMPL(IDs... ids)
+    constexpr auto CreateEntityIMPL(IDs... ids) -> const auto&
     {
         return mEntityMan.template Create<EntSig_t>(ids...);
     }
@@ -196,8 +196,8 @@ public:
 
         auto cmp_ids { TupleAs<ComponentKeys_t>(CreateComponents<RemainingComponents_t>(args...)) };
 
-        return std::apply([&](auto... ids) {
-                    CreateEntityIMPL<EntSig_t>(ids...);
+        return std::apply([&](auto... ids) -> const auto& {
+                    return CreateEntityIMPL<EntSig_t>(ids...);
                     }, cmp_ids);
     }
 
@@ -215,7 +215,8 @@ public:
     }
 
     template<class DestSig_t, class EntIdx_t, class... Args_t>
-    constexpr const auto& TransformTo(EntIdx_t ent_idx, const Args_t&... args)
+    constexpr const auto&
+    TransformTo(EntIdx_t ent_idx, const Args_t&... args)
     {
         using SrcSig_t   = typename EntIdx_t::type;
         using DestCmps_t = typename DestSig_t::type;
@@ -239,8 +240,8 @@ public:
 
         Seq::Unpacker_t<RmCmps_t>::Call(ComponentDestroyer_t{ *this }, old_ids);
 
-        return std::apply([&](auto... ids) {
-                    CreateEntityIMPL<DestSig_t>(ids...);
+        return std::apply([&](auto... ids) -> const auto& {
+                    return CreateEntityIMPL<DestSig_t>(ids...);
                     }, ids);
     }
 
