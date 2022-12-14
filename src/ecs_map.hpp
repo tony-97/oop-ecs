@@ -1,9 +1,11 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <limits>
 #include <iterator>
 
+#include <cstring>
 #include <cassert>
 
 #include "helpers.hpp"
@@ -162,6 +164,13 @@ struct ECSMap_t
 
     constexpr explicit ECSMap_t() = default;
 
+    ~ECSMap_t()
+    {
+        if (mLastIndex == 0 && mData.size() > 0) {
+            std::memset(std::addressof(mData[mLastIndex].mValue), 0, sizeof(T));
+        }
+    }
+
     template<class... Args_t> 
     [[nodiscard]] constexpr Key_t emplace_back(Args_t&&... args)
     {
@@ -188,7 +197,9 @@ struct ECSMap_t
 
         --mLastIndex;
         mData[mData[slot.mIndex].mIndex].mValue.~T();
-        mData[mData[slot.mIndex].mIndex].mValue = std::move(mData[mLastIndex].mValue);
+        if (mData[slot.mIndex].mIndex != mLastIndex) {
+            mData[mData[slot.mIndex].mIndex].mValue = std::move(mData[mLastIndex].mValue);
+        }
         mData[mData[slot.mIndex].mIndex].mEraseIndex = mData[mLastIndex].mEraseIndex;
         // update the slot
         mData[mData[mLastIndex].mEraseIndex].mIndex = mData[slot.mIndex].mIndex;
