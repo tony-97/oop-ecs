@@ -39,7 +39,7 @@ public:
     }
 
     template<class K_t>
-    constexpr void Destroy(const K_t& cmp_key)
+    constexpr void Destroy(K_t cmp_key)
     {
         auto& cont {
             Base_t::template GetRequiredContainer<typename K_t::value_type>()
@@ -49,14 +49,14 @@ public:
     }
 
     template<class K_t>
-    constexpr const auto& GetComponent(const K_t& cmp_key) const
+    constexpr const auto& GetComponent(K_t cmp_key) const
     {
         using Component_t = typename K_t::value_type;
         return Base_t::template operator[]<Component_t>(cmp_key).mSelf;
     }
 
     template<class K_t>
-    constexpr auto& GetComponent(const K_t& cmp_key)
+    constexpr auto& GetComponent(K_t cmp_key)
     {
         using Component_t = typename K_t::value_type;
         return Base_t::template operator[]<Component_t>(cmp_key).mSelf;

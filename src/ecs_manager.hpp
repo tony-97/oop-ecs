@@ -37,7 +37,6 @@ private:
     using ComponentList_t = ComponentsFrom_t<EntSigs_t...>;
     using EntityList_t    = TMPL::TypeList_t<EntSigs_t...>;
     using ComponentMan_t  = ComponentManager_t<ComponentList_t>;
-private:
     using EntityMan_t = EntityManager_t<ComponentKey_t, EntSigs_t...>;
 
     template<class T>
@@ -151,7 +150,7 @@ private:
     }
 
     template<class Signature_t, class EntIdx_t>
-    constexpr auto GetArgumentsFor(EntIdx_t&& it) const
+    constexpr auto GetArgumentsFor(EntIdx_t it) const
     {
         return Seq::Unpacker_t<Signature_t>::Call(SystemArguments_t{  },
                                                   std::forward<EntIdx_t>(it),
@@ -167,7 +166,7 @@ private:
     }
 
     template<class Signature_t, class EntIdx_t>
-    constexpr auto GetComponentsFor(EntIdx_t&& it) const
+    constexpr auto GetComponentsFor(EntIdx_t it) const
     {
         return Seq::Unpacker_t<Signature_t>::Call(SystemComponents_t{  },
                                                   std::forward<EntIdx_t>(it),

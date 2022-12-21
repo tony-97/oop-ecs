@@ -40,20 +40,10 @@ struct ECSMap_t
     struct Key_t
     {
         using value_type = T;
-        //Key_t(Key_t&& other) : mIndex { other.mIndex }
-        //{
-        //    other.mIndex = std::numeric_limits<std::size_t>::max();
-        //}
-        //
-        //Key_t& operator=(Key_t&& other)
-        //{
-        //    mIndex = other.mIndex;
-        //    other.mIndex = std::numeric_limits<std::size_t>::max();
-        //}
-    //private:
+
         friend ECSMap_t;
 
-        Key_t(size_type index) : mIndex { index } {  };
+        constexpr Key_t(size_type index) : mIndex { index } {  };
 
         size_type GetIndex() const { return mIndex; }
     private:
@@ -164,13 +154,6 @@ struct ECSMap_t
 
     constexpr explicit ECSMap_t() = default;
 
-    ~ECSMap_t()
-    {
-        if (mLastIndex == 0 && mData.size() > 0) {
-            std::memset(std::addressof(mData[mLastIndex].mValue), 0, sizeof(T));
-        }
-    }
-
     template<class... Args_t> 
     [[nodiscard]] constexpr Key_t emplace_back(Args_t&&... args)
     {
@@ -191,21 +174,20 @@ struct ECSMap_t
         return key;
     }
 
-    constexpr void erase(const Key_t& slot)
+    constexpr void erase(Key_t key)
     {
-        assert(slot.mIndex != std::numeric_limits<size_type>::max());
+        assert(key.mIndex != std::numeric_limits<size_type>::max());
 
         --mLastIndex;
-        mData[mData[slot.mIndex].mIndex].mValue.~T();
-        if (mData[slot.mIndex].mIndex != mLastIndex) {
-            mData[mData[slot.mIndex].mIndex].mValue = std::move(mData[mLastIndex].mValue);
+        if (mData[key.mIndex].mIndex != mLastIndex) {
+            mData[mData[key.mIndex].mIndex].mValue = std::move(mData[mLastIndex].mValue);
         }
-        mData[mData[slot.mIndex].mIndex].mEraseIndex = mData[mLastIndex].mEraseIndex;
-        // update the slot
-        mData[mData[mLastIndex].mEraseIndex].mIndex = mData[slot.mIndex].mIndex;
+        mData[mData[key.mIndex].mIndex].mEraseIndex = mData[mLastIndex].mEraseIndex;
+        // update the key
+        mData[mData[mLastIndex].mEraseIndex].mIndex = mData[key.mIndex].mIndex;
         // update the index list
-        mData[slot.mIndex].mIndex = mFreeIndex;
-        mFreeIndex = slot.mIndex;
+        mData[key.mIndex].mIndex = mFreeIndex;
+        mFreeIndex = key.mIndex;
     }
 
     constexpr size_type size() const { return mLastIndex; }
@@ -225,16 +207,16 @@ struct ECSMap_t
         return { mData[pos].mEraseIndex };
     }
 
-    constexpr reference operator[](const Key_t& slot)
+    constexpr reference operator[](Key_t key)
     {
-        assert(slot.mIndex != std::numeric_limits<size_type>::max());
-        return mData[mData[slot.mIndex].mIndex].mValue;
+        assert(key.mIndex != std::numeric_limits<size_type>::max());
+        return mData[mData[key.mIndex].mIndex].mValue;
     }
 
-    constexpr const_reference operator[](const Key_t& slot) const
+    constexpr const_reference operator[](Key_t key) const
     {
-        assert(slot.mIndex != std::numeric_limits<size_type>::max());
-        return mData[mData[slot.mIndex].mIndex].mValue;
+        assert(key.mIndex != std::numeric_limits<size_type>::max());
+        return mData[mData[key.mIndex].mIndex].mValue;
     }
 
     constexpr reference operator[](size_type pos)

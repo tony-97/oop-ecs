@@ -121,7 +121,7 @@ public:
     using type = T;
     using id_type = ID_t;
 
-    constexpr const ID_t& GetID() const { return mID; }
+    constexpr ID_t GetID() const { return mID; }
 private:
     constexpr explicit Identifier_t(Key_t<Manager_t>, ID_t id)
         : mID { id } {  }
