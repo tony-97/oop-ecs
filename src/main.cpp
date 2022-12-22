@@ -50,7 +50,7 @@ int main()
 
     Args::Arguments_t ren_args1 { Args::For_v<RenderComponent_t>, 'a' };
     Args::Arguments_t ren_args2 { Args::For_v<RenderComponent_t>, 'b' };
-    Args::Arguments_t pos_args { Args::For_v<PositionComponent_t>, 1, 2 };
+    Args::Arguments_t pos_args  { Args::For_v<PositionComponent_t>, 1, 2 };
     Args::Arguments_t pos_args1 { Args::For_v<PositionComponent_t>, 2, 2 };
     Args::Arguments_t phy_args1 { Args::For_v<PhysicsComponent_t>, 3, 4 };
     Args::Arguments_t phy_args2 { Args::For_v<PhysicsComponent_t>, 5, 4 };
@@ -84,11 +84,9 @@ int main()
     ecs_man.ForEachEntity<BasicCharacter_t>(basic_character_printer);
 
     std::cout << "Converting back basic character..." << std::endl;
-    ecs_man.ForEachEntity<Movable_t>([&](auto& phy, auto&, auto&& ent){
+    ecs_man.ForEachEntity<Movable_t>([&](auto& phy, auto& pos, auto&& ent){
                 if (phy.vx == 5 && phy.vy == 4) {
-                    if constexpr (ECS::IsInstanceOf_v<Movable_t, decltype(ent)>) {
-                        ecs_man.TransformTo<BasicCharacter_t>(ent, Args::Arguments_t{ Args::For_v<RenderComponent_t>, 'd' });
-                    }
+                    ecs_man.TransformTo<BasicCharacter_t>(ent, Args::Arguments_t{ Args::For_v<RenderComponent_t>, 'd' });
                 }
             });
 

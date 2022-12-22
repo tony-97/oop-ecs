@@ -29,7 +29,7 @@ public:
                                             ComponentKeys_t<Components_t>>;
 
     template<class... IDs_t>
-    constexpr explicit Entity_t(IDs_t&&... ids)   : mComponentIDs { std::forward<IDs_t>(ids)... } {  }
+    constexpr explicit Entity_t(IDs_t... ids)   : mComponentIDs { ids... } {  }
     constexpr explicit Entity_t(Entity_t&& other) : mComponentIDs { std::move(other.mComponentIDs) } {  }
 
     constexpr Entity_t& operator=(Entity_t&& other)

@@ -3,13 +3,14 @@
 #include <tmpl/tmpl.hpp>
 #include <tmpl/sequence.hpp>
 #include <tmpl/type_list.hpp>
-#include <type_traits>
 
 #include "arguments.hpp"
 #include "component_manager.hpp"
 #include "entity_manager.hpp"
 #include "helpers.hpp"
 #include "interface.hpp"
+
+#include <type_traits>
 
 namespace ECS
 {
@@ -58,7 +59,8 @@ private:
                     EntityIndex_t<EntSig_t> ent_idx { mConstructorKey_t, i };
                     if constexpr (IsSystemCallable_v<Callback_t, typename SysSig_t::type, EntityIndex_t<EntSig_t>>) {
                         std::apply(cb, ecs_man.template GetArgumentsFor<typename SysSig_t::type>(ent_idx));
-                    } else if constexpr (IsSystemCallable_v<std::remove_reference_t<Callback_t>, typename SysSig_t::type>) {
+                    } else if constexpr (   IsSystemCallable_v<std::remove_reference_t<Callback_t>, typename SysSig_t::type>
+                                         && Seq::Size_v<typename SysSig_t::type> != 1) {
                         std::apply(cb, ecs_man.template GetComponentsFor<typename SysSig_t::type>(ent_idx));
                     } else {
                         std::apply(cb, std::tuple { ent_idx });
@@ -104,10 +106,9 @@ private:
             : mECSMan { ecs_man } {  }
 
         template<class... Cmps_t, class TupKeys_t>
-        constexpr auto operator()(TupKeys_t&& cmp_keys) const
+        constexpr auto operator()(TupKeys_t cmp_keys) const
         {
-            (mECSMan.mComponentMan.Destroy(std::get<ComponentKey_t<Cmps_t>>
-                                           (std::forward<TupKeys_t>(cmp_keys))),
+            (mECSMan.mComponentMan.Destroy(std::get<ComponentKey_t<Cmps_t>>(cmp_keys)),
              ...);
         }
     };

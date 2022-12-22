@@ -1,12 +1,8 @@
 #pragma once
 
-#include <memory>
 #include <vector>
 #include <limits>
 #include <iterator>
-
-#include <cstring>
-#include <cassert>
 
 #include "helpers.hpp"
 
@@ -128,17 +124,17 @@ struct ECSMap_t
             return it;
         }
 
-        constexpr difference_type operator-(const iterator_t& it)
+        constexpr difference_type operator-(const iterator_t it)
         {
             return mSlot - it.mSlot;
         }
 
-        constexpr friend bool operator==(const iterator_t& lhs, const iterator_t& rhs)
+        constexpr friend bool operator==(const iterator_t lhs, const iterator_t rhs)
         {
             return lhs.mSlot == rhs.mSlot;
         }
 
-        constexpr friend bool operator!=(const iterator_t& lhs, const iterator_t& rhs)
+        constexpr friend bool operator!=(const iterator_t lhs, const iterator_t rhs)
         {
             return !(lhs == rhs);
         }
@@ -176,8 +172,6 @@ struct ECSMap_t
 
     constexpr void erase(Key_t key)
     {
-        assert(key.mIndex != std::numeric_limits<size_type>::max());
-
         --mLastIndex;
         if (mData[key.mIndex].mIndex != mLastIndex) {
             mData[mData[key.mIndex].mIndex].mValue = std::move(mData[mLastIndex].mValue);
@@ -209,13 +203,11 @@ struct ECSMap_t
 
     constexpr reference operator[](Key_t key)
     {
-        assert(key.mIndex != std::numeric_limits<size_type>::max());
         return mData[mData[key.mIndex].mIndex].mValue;
     }
 
     constexpr const_reference operator[](Key_t key) const
     {
-        assert(key.mIndex != std::numeric_limits<size_type>::max());
         return mData[mData[key.mIndex].mIndex].mValue;
     }
 
