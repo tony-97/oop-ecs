@@ -32,7 +32,7 @@ public:
     constexpr explicit Entity_t(IDs_t... ids)   : mComponentIDs { ids... } {  }
     constexpr explicit Entity_t(Entity_t&& other) : mComponentIDs { std::move(other.mComponentIDs) } {  }
 
-    constexpr Entity_t& operator=(Entity_t&& other)
+    constexpr auto operator=(Entity_t&& other) -> Entity_t&
     {
         mComponentIDs = std::move(other.mComponentIDs);
 
@@ -40,7 +40,7 @@ public:
     }
 
     template<class Cmpt_t>
-    constexpr const auto& GetComponentID() const
+    constexpr auto GetComponentID() const -> const auto&
     {
         return std::get<CmptKey_t<Cmpt_t>>(mComponentIDs);
     }

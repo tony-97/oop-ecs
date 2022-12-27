@@ -7,7 +7,6 @@
 namespace ECS
 {
 
-// Entities is a variadic template argument that each one is a list of components
 template<template<class> class CmptKey_t, class... EntSigs_t>
 struct EntityManager_t final : SoA_t<Vector_t, Entity_t<EntSigs_t, CmptKey_t>...>, Uncopyable_t
 {
@@ -26,7 +25,7 @@ public:
     }
 
     template<class EntSig_t> [[nodiscard]] constexpr auto 
-    Destroy(EntityID_t<EntSig_t> ent_key)
+    Destroy(EntityID_t<EntSig_t> ent_key) -> auto
     {
         using RequieredEntity = entity_type<EntSig_t>;
         auto& ent  { Base_t::template operator[]<RequieredEntity>(ent_key) };
@@ -40,8 +39,8 @@ public:
         return cmp_keys;
     }
 
-    template<class EntSig_t> constexpr const auto&
-    GetEntity(EntityID_t<EntSig_t> pos) const
+    template<class EntSig_t> constexpr auto
+    GetEntity(EntityID_t<EntSig_t> pos) const -> const auto&
     {
         return Base_t::template operator[]<entity_type<EntSig_t>>(pos);
     }
@@ -53,7 +52,8 @@ public:
     }
 
     template<class EntSig_t> constexpr auto
-    size() const { return Base_t::template size<entity_type<EntSig_t>>(); }
+    size() const -> auto
+    { return Base_t::template size<entity_type<EntSig_t>>(); }
 
 private:
     using Base_t::operator[];

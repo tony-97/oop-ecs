@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <limits>
 #include <iterator>
 
 #include "helpers.hpp"
@@ -41,7 +40,7 @@ struct ECSMap_t
 
         constexpr Key_t(size_type index) : mIndex { index } {  };
 
-        size_type GetIndex() const { return mIndex; }
+        constexpr auto GetIndex() const -> size_type { return mIndex; }
     private:
         size_type mIndex {  };
     };
@@ -59,82 +58,82 @@ struct ECSMap_t
 
         constexpr iterator_t(slot_ptr slot) : mSlot { slot } {  }
 
-        operator iterator_t<const Value_t> () const
+        constexpr operator iterator_t<const Value_t> () const
         {
             return { mSlot };
         }
 
-        constexpr reference operator*() const
+        constexpr auto operator*() const -> reference
         {
             return mSlot->mValue;
         }
 
-        constexpr pointer operator->() const
+        constexpr auto operator->() const -> pointer
         {
             return &mSlot->mValue;
         }
 
-        constexpr iterator_t& operator++()
+        constexpr auto operator++() -> iterator_t&
         {
             ++mSlot;
             return *this;
         }
 
-        constexpr iterator_t operator++(int)
+        constexpr auto operator++(int) -> iterator_t 
         {
             iterator_t tmp { *this };
             ++(*this);
             return tmp;
         }
 
-        constexpr iterator_t& operator--()
+        constexpr auto operator--() -> iterator_t&
         {
             --mSlot;
             return *this;
         }
 
-        constexpr iterator_t operator--(int)
+        constexpr auto operator--(int) -> iterator_t
         {
             iterator_t tmp { *this };
             --(*this);
             return tmp;
         }
 
-        constexpr iterator_t& operator+=(std::size_t n)
+        constexpr auto operator+=(std::size_t n) -> iterator_t&
         {
             mSlot += n;
             return *this;
         }
 
-        constexpr friend iterator_t operator+(iterator_t it, std::size_t n)
+        constexpr auto friend operator+(iterator_t it, std::size_t n) -> iterator_t
         {
             it += n;
             return it;
         }
 
-        constexpr iterator_t& operator-=(std::size_t n)
+        constexpr auto operator-=(std::size_t n) -> iterator_t&
         {
             mSlot -= n;
             return *this;
         }
 
-        constexpr friend iterator_t operator-(iterator_t it, std::size_t n)
+        constexpr auto friend operator-(iterator_t it, std::size_t n) -> iterator_t
         {
             it -= n;
             return it;
         }
 
-        constexpr difference_type operator-(const iterator_t it)
+        constexpr auto operator-(const iterator_t it) -> difference_type
         {
             return mSlot - it.mSlot;
         }
 
-        constexpr friend bool operator==(const iterator_t lhs, const iterator_t rhs)
+        constexpr auto friend operator==(const iterator_t lhs, const iterator_t rhs) -> bool
         {
             return lhs.mSlot == rhs.mSlot;
         }
 
-        constexpr friend bool operator!=(const iterator_t lhs, const iterator_t rhs)
+        constexpr auto friend operator!=(const iterator_t lhs, const iterator_t rhs) -> bool
         {
             return !(lhs == rhs);
         }
@@ -150,8 +149,8 @@ struct ECSMap_t
 
     constexpr explicit ECSMap_t() = default;
 
-    template<class... Args_t> 
-    [[nodiscard]] constexpr Key_t emplace_back(Args_t&&... args)
+    template<class... Args_t> [[nodiscard]] constexpr auto
+    emplace_back(Args_t&&... args) -> Key_t
     {
         Key_t key { mFreeIndex };
         if (mFreeIndex == mLastIndex && mLastIndex == mData.size()) {
@@ -170,7 +169,7 @@ struct ECSMap_t
         return key;
     }
 
-    constexpr void erase(Key_t key)
+    constexpr auto erase(Key_t key) -> void
     {
         --mLastIndex;
         if (mData[key.mIndex].mIndex != mLastIndex) {
@@ -184,58 +183,58 @@ struct ECSMap_t
         mFreeIndex = key.mIndex;
     }
 
-    constexpr size_type size() const { return mLastIndex; }
+    constexpr auto size() -> size_type const { return mLastIndex; }
 
-    constexpr void erase(const_iterator it)
+    constexpr auto erase(const_iterator it) -> void
     {
         erase(get_key(it));
     }
 
-    constexpr Key_t get_key(const_iterator it) const
+    constexpr auto get_key(const_iterator it) const -> Key_t
     {
         return { mData[get_index(it)].mEraseIndex };
     }
 
-    constexpr Key_t get_key(size_type pos) const
+    constexpr auto get_key(size_type pos) const -> Key_t
     {
         return { mData[pos].mEraseIndex };
     }
 
-    constexpr reference operator[](Key_t key)
+    constexpr auto operator[](Key_t key) -> reference
     {
         return mData[mData[key.mIndex].mIndex].mValue;
     }
 
-    constexpr const_reference operator[](Key_t key) const
+    constexpr auto operator[](Key_t key) const -> const_reference
     {
         return mData[mData[key.mIndex].mIndex].mValue;
     }
 
-    constexpr reference operator[](size_type pos)
+    constexpr auto operator[](size_type pos) -> reference
     {
         return mData[pos].mValue;
     }
 
-    constexpr const_reference operator[](size_type pos) const
+    constexpr auto operator[](size_type pos) const -> const_reference
     {
         return mData[pos].mValue;
     }
 
-    iterator               begin()         { return { mData.data() }; }
-    const_iterator         begin()   const { return { mData.data() }; }
-    reverse_iterator       rbegin()        { return { std::make_reverse_iterator(end()) }; }
-    const_reverse_iterator rbegin()  const { return { std::make_reverse_iterator(end()) }; }
-    const_reverse_iterator crbegin() const { return { rbegin() }; }
+    constexpr auto begin()         -> iterator               { return { mData.data() }; }
+    constexpr auto begin()   const -> const_iterator         { return { mData.data() }; }
+    constexpr auto rbegin()        -> reverse_iterator       { return { std::make_reverse_iterator(end()) }; }
+    constexpr auto rbegin()  const -> const_reverse_iterator { return { std::make_reverse_iterator(end()) }; }
+    constexpr auto crbegin() const -> const_reverse_iterator { return { rbegin() }; }
 
-    iterator               end()         { return { mData.data() + mLastIndex }; }
-    const_iterator         end()   const { return { mData.data() + mLastIndex }; }
-    reverse_iterator       rend()        { return { std::make_reverse_iterator(begin()) }; }
-    const_reverse_iterator rend()  const { return { std::make_reverse_iterator(begin()) }; }
-    const_reverse_iterator crend() const { return { rend() }; }
+    constexpr auto end()         -> iterator               { return { mData.data() + mLastIndex }; }
+    constexpr auto end()   const -> const_iterator         { return { mData.data() + mLastIndex }; }
+    constexpr auto rend()        -> reverse_iterator       { return { std::make_reverse_iterator(begin()) }; }
+    constexpr auto rend()  const -> const_reverse_iterator { return { std::make_reverse_iterator(begin()) }; }
+    constexpr auto crend() const -> const_reverse_iterator { return { rend() }; }
 
 private:
 
-    constexpr auto get_index(const_iterator it) const
+    constexpr auto get_index(const_iterator it) const -> auto
     {
         return static_cast<size_type>(std::distance(begin(), it));
     }
