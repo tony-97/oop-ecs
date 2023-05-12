@@ -4,7 +4,6 @@
 #include <tmpl/sequence.hpp>
 #include <tmpl/type_list.hpp>
 
-#include "arguments.hpp"
 #include "component_manager.hpp"
 #include "entity_manager.hpp"
 #include "helpers.hpp"
@@ -108,30 +107,21 @@ private:
     };
 
     template<class CmptArgs_t> constexpr auto
-    CreateComponent(const CmptArgs_t& arg) -> auto
+    CreateComponent(CmptArgs_t arg) -> auto
     {
-        using RequieredComponent_t = typename CmptArgs_t::type;
-
-        auto create_cmp {
-            [&](auto&&... args) {
-                return mComponentMan.template Create<RequieredComponent_t>
-                    (std::forward<decltype(args)>(args)...);
-            }
-        };
-
-        return Args::apply(create_cmp, arg);
+        return mComponentMan.template Create<CmptArgs_t>(arg);
     }
 
     template<class EmptyCmps_t, std::size_t... Is, class... Args_t> constexpr auto 
-    CreateComponentsIMPL(std::index_sequence<Is...>, const Args_t&... args) -> auto
+    CreateComponentsIMPL(std::index_sequence<Is...>, Args_t... args) -> auto
     {
        return std::tuple {
            CreateComponent(args)..., 
-           CreateComponent(Args::Arguments_t<Seq::TypeAt_t<Is, EmptyCmps_t>>{})... };
+           CreateComponent(Seq::TypeAt_t<Is, EmptyCmps_t>{})... };
     }
 
     template<class EmptyCmps_t, class... Args_t> constexpr auto
-    CreateComponents(const Args_t&... args) -> auto
+    CreateComponents(Args_t... args) -> auto
     {
         return CreateComponentsIMPL<EmptyCmps_t>(
                 std::make_index_sequence<Seq::Size_v<EmptyCmps_t>>{},
@@ -159,9 +149,9 @@ private:
     }
 public:
     template<class EntSig_t, class... Args_t> constexpr auto
-    CreateEntity(const Args_t&... args) -> const auto&
+    CreateEntity(Args_t... args) -> const auto&
     {
-        using ArgsTypes = TMPL::TypeList_t<typename Args_t::type...>;
+        using ArgsTypes = TMPL::TypeList_t<Args_t...>;
         using RequiredComponents_t  = ComponentsFrom_t<EntSig_t>;
         using RemainingComponents_t = Seq::RemoveTypes_t<RequiredComponents_t, ArgsTypes>;
         static_assert(Seq::IsUnique_v<ArgsTypes>, "Component arguments must be unique.");
@@ -191,7 +181,7 @@ public:
     }
 
     template<class DestSig_t, class EntIdx_t, class... Args_t> constexpr auto
-    TransformTo(EntIdx_t ent_idx, const Args_t&... args) -> const auto& 
+    TransformTo(EntIdx_t ent_idx, Args_t... args) -> const auto& 
     {
         using SrcSig_t   = typename EntIdx_t::type;
         using DestCmps_t = typename DestSig_t::type;
@@ -199,7 +189,7 @@ public:
         using RmCmps_t   = Seq::RemoveTypes_t<SrcCmps_t, DestCmps_t>;
         using MkCmps_t   = Seq::RemoveTypes_t<DestCmps_t, SrcCmps_t>;
 
-        using ArgsTypes = TMPL::TypeList_t<typename Args_t::type...>;
+        using ArgsTypes = TMPL::TypeList_t<Args_t...>;
         using RemainingComponents_t = Seq::RemoveTypes_t<MkCmps_t, ArgsTypes>;
         static_assert(Seq::IsUnique_v<ArgsTypes>, "Component arguments must be unique.");
         static_assert(TMPL::IsSubsetOf_v<ArgsTypes, MkCmps_t>,
@@ -254,13 +244,13 @@ public:
     }
 
     template<class CmpKey_t> constexpr auto
-    GetComponent(CmpKey_t cmp_key) const -> const typename CmpKey_t::value_type::type&
+    GetComponent(CmpKey_t cmp_key) const -> const typename CmpKey_t::value_type&
     {
         return mComponentMan.GetComponent(cmp_key);
     }
 
     template<class CmpKey_t> constexpr auto
-    GetComponent(CmpKey_t cmp_key) -> typename CmpKey_t::value_type::type&
+    GetComponent(CmpKey_t cmp_key) -> typename CmpKey_t::value_type&
     {
         return mComponentMan.GetComponent(cmp_key);
     }
