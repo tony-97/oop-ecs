@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tuple>
+
 #include <tmpl/sequence.hpp>
 
 namespace ECS
