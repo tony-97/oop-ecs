@@ -9,7 +9,7 @@ namespace ECS
 
 namespace Seq = TMPL::Sequence;
 
-template<class Sign_t, template<class> class CmptKey_t>
+template<class Sign_t, template<class> class ID_t>
 struct Entity_t final : Uncopyable_t
 {
     template<class Cmps_t> struct ComponentKeys;
@@ -17,7 +17,7 @@ struct Entity_t final : Uncopyable_t
     template<template<class...> class Cmps_t, class... Ts>
     struct ComponentKeys<Cmps_t<Ts...>>
     {
-        using type = TMPL::TypeList_t<CmptKey_t<Ts>...>;
+        using type = TMPL::TypeList_t<ID_t<Ts>...>;
     };
     
     template<class Cmps_t>
@@ -42,14 +42,13 @@ public:
     template<class Cmpt_t>
     constexpr auto GetComponentID() const -> const auto&
     {
-        return std::get<CmptKey_t<Cmpt_t>>(mComponentIDs);
+        return std::get<ID_t<Cmpt_t>>(mComponentIDs);
     }
 
     constexpr auto GetComponentIDs() const -> const ComponentIDs_t&
     { return mComponentIDs; }
 
 private:
-
     ComponentIDs_t mComponentIDs {  };
 };
 

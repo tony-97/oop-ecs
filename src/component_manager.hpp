@@ -24,9 +24,7 @@ public:
     template<class ReqCmpt_t> constexpr auto
     Create(ReqCmpt_t cmp) -> auto
     {
-        //return Base_t::template emplace_back<ReqCmpt_t>(std::forward<Args_t>(args)...);
         return Base_t::template emplace_back<ReqCmpt_t>(cmp);
-        //return Base_t::template push_back<ReqCmpt_t>(cmp);
     }
 
     template<class K_t> constexpr auto

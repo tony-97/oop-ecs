@@ -1,5 +1,7 @@
 #pragma once
 
+#include <execution>
+#include <algorithm>
 #include <tmpl/tmpl.hpp>
 #include <tmpl/sequence.hpp>
 #include <tmpl/type_list.hpp>
