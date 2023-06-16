@@ -55,6 +55,7 @@ public:
     emplace(const_iterator<T> pos, Args_t&&... args) -> iterator<T>
     { return GetRequiredContainer<T>().emplace(pos, std::forward<Args_t>(args)...); }
 
+    template<class T> constexpr auto erase                          (T pos) -> auto { return GetRequiredContainer<T>().erase(pos); }
     template<class T> constexpr auto erase                          (const_iterator<T> pos) -> iterator<T> { return GetRequiredContainer<T>().erase(pos); }
     template<class T> constexpr auto erase(const_iterator<T> first, const_iterator<T> last) -> iterator<T> { return GetRequiredContainer<T>().erase(first, last); }
 

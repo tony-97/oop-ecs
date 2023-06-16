@@ -2,58 +2,60 @@
 
 #include "entity.hpp"
 #include "struct_of_arrays.hpp"
-#include "type_aliases.hpp"
+#include "ecs_map.hpp"
+#include <type_traits>
 
 namespace ECS
 {
 
-template<template<class> class CmptKey_t, class... EntSigs_t>
-struct EntityManager_t final : SoA_t<Vector_t, Entity_t<EntSigs_t, CmptKey_t>...>, Uncopyable_t
+template<class... EntSigs_t>
+struct EntityManager_t final : SoA_t<ECSMap_t, Entity_t<EntSigs_t>...>, Uncopyable_t
 {
 public:
                       using Self_t      = EntityManager_t;
-                      using Base_t      = SoA_t<Vector_t, Entity_t<EntSigs_t, CmptKey_t>...>;
-    template<class T> using EntityID_t  = typename Vector_t<T>::size_type;
-    template<class T> using entity_type = Entity_t<T, CmptKey_t>;
+                      using Base_t      = SoA_t<ECSMap_t, Entity_t<EntSigs_t>...>;
+    template<class T> using entity_type = Entity_t<T>;
 
     constexpr explicit EntityManager_t() : Base_t{  } {  }
 
-    template<class EntSig_t, class... CmptKeys_t> constexpr auto
-    Create(CmptKeys_t... keys) -> const auto&
+    template<class EntSig_t, class... CmpID_t> constexpr auto
+    Create(CmpID_t... ids) -> auto
     {
-        return Base_t::template emplace_back<entity_type<EntSig_t>>(keys...);
+        return Base_t::template emplace_back<entity_type<EntSig_t>>(ids...);
     }
 
-    template<class EntSig_t> [[nodiscard]] constexpr auto 
-    Destroy(EntityID_t<EntSig_t> ent_key) -> auto
+    template<class EntID_t> [[nodiscard]] constexpr auto 
+    Destroy(EntID_t ent_id) -> auto
     {
-        using RequieredEntity = entity_type<EntSig_t>;
-        auto& ent  { Base_t::template operator[]<RequieredEntity>(ent_key) };
-        auto cmp_keys { ent.GetComponentIDs() };
-        auto& last_ent { Base_t::template back<RequieredEntity>() };
+        auto& cont {
+            Base_t::template GetRequiredContainer<typename EntID_t::value_type>()
+        };
 
-        ent = std::move(last_ent);
+        auto& ent    { Base_t::template operator[]<typename EntID_t::value_type>(ent_id) };
+        auto cmp_ids { ent.GetComponentIDs() };
 
-        Base_t::template pop_back<RequieredEntity>();
+        cont.erase(ent_id);
 
-        return cmp_keys;
+        return cmp_ids;
     }
 
-    template<class EntSig_t> constexpr auto
-    GetEntity(EntityID_t<EntSig_t> pos) const -> const auto&
+    template<class EntID_t> constexpr auto
+    GetEntity(EntID_t pos) const -> const auto&
     {
-        return Base_t::template operator[]<entity_type<EntSig_t>>(pos);
+        return Base_t::template operator[]<typename EntID_t::value_type>(pos);
     }
 
-    template<class EntSig_t> constexpr auto&
-    GetEntity(EntityID_t<EntSig_t> pos)
+    template<class EntID_t> constexpr auto&
+    GetEntity(EntID_t pos)
     {
-        return Base_t::template operator[]<entity_type<EntSig_t>>(pos);
+        return Base_t::template operator[]<typename EntID_t::value_type>(pos);
     }
 
-    template<class EntSig_t> constexpr auto
-    size() const -> auto
-    { return Base_t::template size<entity_type<EntSig_t>>(); }
+    template<class It_t> constexpr auto
+    GetEntityID(It_t it) const
+    {
+        return Base_t::template GetRequiredContainer<std::remove_const_t<typename It_t::value_type>>().get_key(it);
+    }
 
 private:
     using Base_t::operator[];

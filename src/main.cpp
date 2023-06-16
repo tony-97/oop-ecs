@@ -1,9 +1,8 @@
 #include <iostream>
+#include <vector>
 
-#include "arguments.hpp"
 #include "ecs_manager.hpp"
-
-#include "interface.hpp"
+#include "class.hpp"
 
 struct RenderComponent_t
 {
@@ -42,23 +41,16 @@ constexpr auto basic_character_printer [[maybe_unused]] = [](auto& ren, auto& po
 
 int main()
 {
-    using Renderable_t     = ECS::Base_t<RenderComponent_t, PositionComponent_t>;
-    using Movable_t        = ECS::Base_t<PhysicsComponent_t, PositionComponent_t>;
-    using BasicCharacter_t = ECS::Derived_t<Renderable_t, Movable_t>;
+    using Renderable_t     = ECS::Class_t<RenderComponent_t, PositionComponent_t>;
+    using Movable_t        = ECS::Class_t<PhysicsComponent_t, PositionComponent_t>;
+    using BasicCharacter_t = ECS::Class_t<Renderable_t, Movable_t>;
 
     ECS::ECSManager_t<Renderable_t, Movable_t, BasicCharacter_t> ecs_man {  };
 
-    Args::Arguments_t ren_args1 { Args::For_v<RenderComponent_t>, 'a' };
-    Args::Arguments_t ren_args2 { Args::For_v<RenderComponent_t>, 'b' };
-    Args::Arguments_t pos_args  { Args::For_v<PositionComponent_t>, 1, 2 };
-    Args::Arguments_t pos_args1 { Args::For_v<PositionComponent_t>, 2, 2 };
-    Args::Arguments_t phy_args1 { Args::For_v<PhysicsComponent_t>, 3, 4 };
-    Args::Arguments_t phy_args2 { Args::For_v<PhysicsComponent_t>, 5, 4 };
-
-    ecs_man.CreateEntity<Renderable_t>(ren_args1);
-    ecs_man.CreateEntity<Renderable_t>(ren_args2, pos_args);
-    ecs_man.CreateEntity<Movable_t>(pos_args, phy_args1);
-    ecs_man.CreateEntity<BasicCharacter_t>(Args::Arguments_t{ Args::For_v<RenderComponent_t>, 'd' }, pos_args1, phy_args2);
+    ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'a' });
+    ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'b' }, PositionComponent_t{ 1, 2 });
+    ecs_man.CreateEntity<Movable_t>(PositionComponent_t{ 2, 2 }, PhysicsComponent_t{ 3, 4 });
+    ecs_man.CreateEntity<BasicCharacter_t>(RenderComponent_t{ 'd' }, PositionComponent_t{ 6, 2 }, PhysicsComponent_t{ 1, 1 });
 
     std::cout << "Iterating over renderables..." << std::endl;
     ecs_man.ForEachEntity<Renderable_t>(rendereable_printer);
@@ -84,9 +76,9 @@ int main()
     ecs_man.ForEachEntity<BasicCharacter_t>(basic_character_printer);
 
     std::cout << "Converting back basic character..." << std::endl;
-    ecs_man.ForEachEntity<Movable_t>([&](auto& phy, auto& pos, auto&& ent){
+    ecs_man.ForEachEntity<Movable_t>([&](auto& phy, auto&, auto&& ent){
                 if (phy.vx == 5 && phy.vy == 4) {
-                    ecs_man.TransformTo<BasicCharacter_t>(ent, Args::Arguments_t{ Args::For_v<RenderComponent_t>, 'd' });
+                    ecs_man.TransformTo<BasicCharacter_t>(ent, RenderComponent_t{ 'd' });
                 }
             });
 
@@ -98,6 +90,5 @@ int main()
 
     std::cout << "Iterating over basic characters..." << std::endl;
     ecs_man.ForEachEntity<BasicCharacter_t>(basic_character_printer);
-
     return 0;
 }

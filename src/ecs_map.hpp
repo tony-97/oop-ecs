@@ -23,9 +23,9 @@ struct ECSMap_t
     {
         using value_type = T;
 
+        T mValue {  };
         size_type mIndex {  };
         size_type mEraseIndex {  };
-        T mValue {  };
 
         template<class... Args_t> constexpr
         Slot_t(Args_t&&... args)
@@ -38,6 +38,7 @@ struct ECSMap_t
 
         friend ECSMap_t;
 
+        constexpr Key_t() {  };
         constexpr Key_t(size_type index) : mIndex { index } {  };
 
         constexpr auto GetIndex() const -> size_type { return mIndex; }
