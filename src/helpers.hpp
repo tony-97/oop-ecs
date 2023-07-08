@@ -1,8 +1,7 @@
 #pragma once
 
-#include <tuple>
-
-#include <tmpl/sequence.hpp>
+#include <utility>
+#include <type_traits>
 
 namespace ECS
 {
@@ -10,17 +9,11 @@ namespace ECS
 // SameAsConstMemFunc
 ///////////////////////////////////////////////////////////////////////////////
 
-template<class T>
-struct TypeIdentity { using type = T; };
-
-template<class T>
-using TypeIdentity_t = typename TypeIdentity<T>::type;
-
-template <class T> struct NonConst            : TypeIdentity<T>   {  };
-template <class T> struct NonConst<T const>   : TypeIdentity<T>   {  };
-template <class T> struct NonConst<T const&>  : TypeIdentity<T&>  {  };
-template <class T> struct NonConst<T const*>  : TypeIdentity<T*>  {  };
-template <class T> struct NonConst<T const&&> : TypeIdentity<T&&> {  };
+template <class T> struct NonConst            : std::type_identity<T>   {  };
+template <class T> struct NonConst<T const>   : std::type_identity<T>   {  };
+template <class T> struct NonConst<T const&>  : std::type_identity<T&>  {  };
+template <class T> struct NonConst<T const*>  : std::type_identity<T*>  {  };
+template <class T> struct NonConst<T const&&> : std::type_identity<T&&> {  };
 
 template<class T>
 using NonConst_t = typename NonConst<T>::type;
@@ -69,76 +62,10 @@ struct Uncopyable_t
     Uncopyable_t& operator=(const Uncopyable_t&) = delete;
 };
 ///////////////////////////////////////////////////////////////////////////////
-// Convert tuple
+// lambda overloaded
 ///////////////////////////////////////////////////////////////////////////////
 
-struct TupleConverter_t
-{
-    template<class... Ts, class Tuple_t>
-    constexpr auto operator()(Tuple_t tup) -> auto
-    {
-        return std::tuple { std::get<Ts>(tup)... };
-    }
-};
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
-template<class DestTypes, class SrcTuple_t>
-constexpr auto TupleAs(SrcTuple_t tup) -> auto
-{
-    return TMPL::Sequence::Unpacker_t<DestTypes>::Call(TupleConverter_t{  }, tup);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// key for managers
-///////////////////////////////////////////////////////////////////////////////
-
-template<class Owner_t>
-struct Key_t
-{
-private:
-friend Owner_t;
-    explicit constexpr Key_t() = default;
-};
-
-///////////////////////////////////////////////////////////////////////////////
-// identifier for managers
-///////////////////////////////////////////////////////////////////////////////
-
-template<class Manager_t, class T, class ID_t = std::size_t>
-class Identifier_t
-{
-    friend Manager_t;
-public:
-    using type = T;
-    using id_type = ID_t;
-
-    constexpr auto GetID() const -> ID_t& { return mID; }
-private:
-    constexpr explicit Identifier_t(Key_t<Manager_t>, ID_t id)
-        : mID { id } {  }
-
-    const ID_t mID {  };
-};
-
-///////////////////////////////////////////////////////////////////////////////
-// IsConstructible
-///////////////////////////////////////////////////////////////////////////////
-
-template <class, class T, class... Args>
-struct IsConstructibleIMPL : std::false_type {  };
-
-template <class T, class... Args>
-struct IsConstructibleIMPL<std::void_t<decltype(T{std::declval<Args>()...})>,
-                           T, Args...> : std::true_type {};
-
-template <class T, class... Args>
-using IsConstructible = IsConstructibleIMPL<std::void_t<>, T, Args...>;
-
-template <class T, class... Args>
-constexpr static inline auto IsConstructible_v { IsConstructible<T, Args...>::value };
-
-// Adds const if Obj_t is const
-template<class Obj_t, class T>
-using AddConstIf_t = std::conditional_t<std::is_const_v<std::remove_reference_t<Obj_t>>,
-                                        std::add_const_t<T>,
-                                        T>;
 } // namespace ECS

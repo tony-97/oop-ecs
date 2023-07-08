@@ -3,38 +3,25 @@
 #include <tmpl/tmpl.hpp>
 #include <tmpl/sequence.hpp>
 #include <tmpl/type_list.hpp>
-#include <type_traits>
 
-#include "type_aliases.hpp"
+#include <type_traits>
 
 namespace ECS
 {
 
 namespace Seq = TMPL::Sequence;
 
-template<class T>
-struct ToID_t
-{
-    using type = ID_t<T>;
-};
+template <typename T, typename = void> struct IsClass : std::false_type {};
 
-template <typename T, typename = void>
-struct IsClass : std::false_type {};
+template <typename T>                  struct IsClass<T, std::void_t<typename T::Class_t>> : std::true_type {};
 
-template <typename T>
-struct IsClass<T, std::void_t<typename T::Class_t>> : std::true_type {};
+template<class T> constexpr static inline auto IsClass_v { IsClass<T>::value };
 
-template <typename T, typename = void>
-struct GetClass : std::type_identity<T> {};
+template <typename T, typename = void> struct GetClass : std::type_identity<T> {};
 
-template <typename T>
-struct GetClass<T, std::void_t<typename T::Class_t>> : std::type_identity<typename T::Class_t> {};
+template <typename T>                  struct GetClass<T, std::void_t<typename T::Class_t>> : std::type_identity<typename T::Class_t> {};
 
-template <class Derived>
-using GetClass_t = typename GetClass<Derived>::type;
-
-template<class T>
-constexpr static inline auto IsClass_v { IsClass<T>::value };
+template <class Derived> using GetClass_t = typename GetClass<Derived>::type;
 
 template <typename T, typename = void>
 struct GetComponents
@@ -70,7 +57,9 @@ template<template<class...> class Bases_t, class... Ts>
 struct GetBases<Bases_t<Ts...>>
 {
     using type =
-        Seq::Cat_t<std::conditional_t<IsClass_v<Ts>, Seq::Cat_t<TMPL::TypeList_t<Ts>, typename GetBases<GetClass_t<Ts>>::type>, TMPL::TypeList_t<>>...>;
+        Seq::Cat_t<std::conditional_t<IsClass_v<Ts>,
+        Seq::Cat_t<TMPL::TypeList_t<Ts>,
+        typename GetBases<GetClass_t<Ts>>::type>, TMPL::TypeList_t<>>...>;
 };
 
 template<class T>
@@ -92,6 +81,18 @@ struct IsSystemCallable<Fn_t, Sig_t<Sigs_t...>>
 
 template<class Fn_t, class... Args_t>
 static inline constexpr auto IsSystemCallable_v { IsSystemCallable<Fn_t, Args_t...>::value };
+
+template <bool Enable, class Fn_t, class... Args_t>
+struct ConditionalIsSystemCallable;
+
+template <class Fn_t, class... Args_t>
+struct ConditionalIsSystemCallable<true, Fn_t, Args_t...> : std::bool_constant<IsSystemCallable_v<Fn_t, Args_t...>> {  };
+
+template <class Fn_t, class... Args_t>
+struct ConditionalIsSystemCallable<false, Fn_t, Args_t...> : std::false_type {  };
+
+template <bool Enable, class Fn_t, class... Args_t>
+constexpr bool ConditionalIsSystemCallable_v = ConditionalIsSystemCallable<Enable, Fn_t, Args_t...>::value;
 
 template<class Sign1_t, class Sign2_t>
 struct IsInstanceOf : std::bool_constant<std::is_same_v<Sign1_t, Sign2_t>> {  };

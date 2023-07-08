@@ -1,59 +1,70 @@
 #pragma once
 
-#include <tmpl/sequence.hpp>
-#include <tuple>
-
 #include "type_aliases.hpp"
-#include "traits.hpp"
 #include "helpers.hpp"
+
+#include <tuple>
 
 namespace ECS
 {
 
 namespace Seq = TMPL::Sequence;
 
-template<class Sign_t>
+template<class Config_t>
 struct Entity_t final : Uncopyable_t
 {
-    public:
-    using Signature_t    = Sign_t;
-    using Components_t   = ComponentsFrom_t<Signature_t>;
-    using Bases_t        = GetBases_t<Signature_t>;
-    using ComponentIDs_t = Seq::ConvertTo_t<std::tuple, Seq::Map_t<Components_t, ToID_t>>;
-    using BasesIDs_t     = Seq::ConvertTo_t<std::tuple, Seq::Map_t<Bases_t, ToID_t>>;
+public:
+    using Signature_t     = typename Config_t::Signature_t;
+    using Components_t    = typename Config_t::Components_t;
+    using Bases_t         = typename Config_t::Bases_t;
+    using ComponentIDs_t  = typename Config_t::ComponentIDs_t;
+    using BasesIDs_t      = typename Config_t::BasesIDs_t;
+    using ParentVariant_t = typename Config_t::ParentVariant_t;
 
-    template<class... IDs_t>
-    constexpr explicit Entity_t(IDs_t... ids) : mComponentIDs { ids... } {  }
+    template<class T> using EntityID_t  = ID_t<Entity_t<typename Config_t::template Self_t<T>>>;
 
-    template<class TupleIDs_t>
-    constexpr explicit Entity_t(TupleIDs_t tp_ids) : Entity_t(Components_t{}, tp_ids) {  }
+    template<class ParentID_t = EntityID_t<Signature_t>>
+    constexpr explicit Entity_t(auto cmp_ids, ParentID_t parent_id = {})
+    : Entity_t(Components_t{}, cmp_ids, parent_id) {  }
 
-    constexpr explicit Entity_t(Entity_t&& other) : mComponentIDs { std::move(other.mComponentIDs) } {  }
+    constexpr explicit Entity_t(Entity_t&& other)
+        : mComponentIDs { std::move(other.mComponentIDs) },
+          mBases        { std::move(other.mBases)        },
+          mParent       { std::move(other.mParent)       } {  }
 
     constexpr auto operator=(Entity_t&& other) -> Entity_t&
     {
         mComponentIDs = std::move(other.mComponentIDs);
+        mBases        = std::move(other.mBases);
+        mParent       = std::move(other.mParent);
 
         return *this;
     }
 
-    template<class Cmpt_t>
-    constexpr auto GetComponentID() const -> auto
+    template<class Cmpt_t>    constexpr auto GetComponentID() const -> auto { return std::get<ID_t<Cmpt_t>>(mComponentIDs); }
+    template<class EntSign_t> constexpr auto GetBaseID()      const -> auto { return std::get<EntityID_t<EntSign_t>>(mBases); }
+
+    constexpr auto GetComponentIDs() const -> ComponentIDs_t { return mComponentIDs; }
+    constexpr auto GetBaseIDs()      const -> BasesIDs_t     { return mBases; }
+    constexpr auto GetParentID()     const -> auto           { return mParent; }
+
+    constexpr auto SetParentID(auto parent_id) -> void { mParent = parent_id; }
+    constexpr auto SetBasesIDs(auto bs_ids)    -> void
     {
-        return std::get<ID_t<Cmpt_t>>(mComponentIDs);
+        Seq::ForEach_t<Bases_t>::Do([&]<class T>() {
+                    using EntID_t = EntityID_t<T>;
+                    std::get<EntID_t>(mBases) = std::get<EntID_t>(bs_ids);
+                });
     }
 
-    constexpr auto GetComponentIDs() const -> ComponentIDs_t
-    { return mComponentIDs; }
-
 private:
+    template<template<class...> class TList_t, class... Cmps_t>
+    constexpr explicit Entity_t(TList_t<Cmps_t...>, auto cmp_ids, auto parent_id)
+        : mComponentIDs{ std::get<ID_t<Cmps_t>>(cmp_ids)... }, mParent { parent_id } {  }
 
-    template<template<class...> class TList_t, class... Ts, class TupleIDs_t>
-    constexpr explicit Entity_t(TList_t<Ts...>, TupleIDs_t tp_ids) 
-        : mComponentIDs{ std::get<Ts>(tp_ids)... } {  }
-
-    ComponentIDs_t mComponentIDs {  };
-    BasesIDs_t mBases {  };
+    ComponentIDs_t  mComponentIDs {  };
+    BasesIDs_t      mBases        {  };
+    ParentVariant_t mParent       {  };
 };
 
 } // namespace ECS

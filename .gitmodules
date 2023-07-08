@@ -1,3 +1,0 @@
-[submodule "external/tmpl"]
-	path = external/tmpl
-	url = git@github.com:tony-97/tmpl.git

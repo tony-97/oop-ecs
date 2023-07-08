@@ -26,11 +26,11 @@ public:
         CheckIfTypesAreUnique();
     }
 
-    template<class T, class U> constexpr auto operator[](U u)       -> reference<T>       { return GetRequiredContainer<T>()[u]; }
-    template<class T, class U> constexpr auto operator[](U u) const -> const_reference<T> { return GetRequiredContainer<T>()[u]; }
+    template<class T, class U> constexpr auto operator[](U u)       -> auto&       { return GetRequiredContainer<T>()[u]; }
+    template<class T, class U> constexpr auto operator[](U u) const -> const auto& { return GetRequiredContainer<T>()[u]; }
 
-    template<class T, class U> constexpr auto at(U u)       -> reference<T>       { return GetRequiredContainer<T>().at(u); }
-    template<class T, class U> constexpr auto at(U u) const -> const_reference<T> { return GetRequiredContainer<T>().at(u); }
+    template<class T, class U> constexpr auto at(U u)       -> auto&       { return GetRequiredContainer<T>().at(u); }
+    template<class T, class U> constexpr auto at(U u) const -> const auto& { return GetRequiredContainer<T>().at(u); }
 
     template<class T> constexpr auto front()       -> reference<T>       { return GetRequiredContainer<T>().front(); }
     template<class T> constexpr auto front() const -> const_reference<T> { return GetRequiredContainer<T>().front(); }
@@ -113,7 +113,7 @@ protected:
     template<class Type_t>
     constexpr static auto CheckIfTypeExists() -> void
     {
-        static_assert(TMPL::IsOneOf_v<Type_t, Ts...>,
+        static_assert(TMPL::IsOneOf_v<Type_t, TMPL::TypeList_t<Ts...>>,
                       "The requiered type does not exists in this instance.");
     }
 };
