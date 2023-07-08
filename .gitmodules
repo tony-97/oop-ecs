@@ -1,0 +1,6 @@
+[submodule "external/tmpl"]
+	path = external/tmpl
+	url = ../tmpl
+[submodule "external/makefile"]
+	path = external/makefile
+	url = ../makefilegen
