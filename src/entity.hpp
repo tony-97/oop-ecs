@@ -3,12 +3,12 @@
 #include "type_aliases.hpp"
 #include "helpers.hpp"
 
+#include <tmpl/sequence.hpp>
+
 #include <tuple>
 
 namespace ECS
 {
-
-namespace Seq = TMPL::Sequence;
 
 template<class Config_t>
 struct Entity_t final : Uncopyable_t
@@ -51,7 +51,7 @@ public:
     constexpr auto SetParentID(auto parent_id) -> void { mParent = parent_id; }
     constexpr auto SetBasesIDs(auto bs_ids)    -> void
     {
-        Seq::ForEach_t<Bases_t>::Do([&]<class T>() {
+        TMPL::Sequence::ForEach_t<Bases_t>::Do([&]<class T>() {
                     using EntID_t = EntityID_t<T>;
                     std::get<EntID_t>(mBases) = std::get<EntID_t>(bs_ids);
                 });

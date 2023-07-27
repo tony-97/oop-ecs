@@ -26,14 +26,14 @@ private:
     template<class... Ts> using BaseEntityContainer_t    = SoA_t<ECSMap_t, Entity_t<EntityConfig_t<Ts>>...>;
 
     using EntSignatures_t = typename Config_t::Signatures_t;
-    using ComponentList_t = Seq::ConvertTo_t<ComponentsFrom_t, EntSignatures_t>;
+    using ComponentList_t = Seq::As_t<Traits::Components_t, EntSignatures_t>;
 
     template<class T> using ToEntity_t = std::type_identity<Entity_t<EntityConfig_t<T>>>;
     template<class T> using ToID_t     = std::type_identity<ID_t<T>>;
 
     struct ComponentManagerConfig_t
     {
-        using base = Seq::ConvertTo_t<BaseComponentContainer_t, ComponentList_t>;
+        using base = Seq::As_t<BaseComponentContainer_t, ComponentList_t>;
     };
 
     template<class Sign_t>
@@ -43,16 +43,16 @@ private:
         using Self_t          = EntityConfig_t<T>;
         using Signature_t     = Sign_t;
         using Signatures_t    = EntSignatures_t;
-        using Components_t    = ComponentsFrom_t<Signature_t>;
-        using Bases_t         = GetBases_t<Signature_t>;
-        using ComponentIDs_t  = Seq::ConvertTo_t<std::tuple, Seq::Map_t<Components_t, ToID_t>>;
-        using BasesIDs_t      = Seq::ConvertTo_t<std::tuple, Seq::Map_t<Seq::Map_t<Bases_t, ToEntity_t>, ToID_t>>;
-        using ParentVariant_t = Seq::ConvertTo_t<std::variant, Seq::Map_t<Seq::Map_t<Signatures_t, ToEntity_t>, ToID_t>>;
+        using Components_t    = Traits::Components_t<Signature_t>;
+        using Bases_t         = Traits::Bases_t<Signature_t>;
+        using ComponentIDs_t  = Seq::As_t<std::tuple, Seq::Map_t<Components_t, ToID_t>>;
+        using BasesIDs_t      = Seq::As_t<std::tuple, Seq::Map_t<Seq::Map_t<Bases_t, ToEntity_t>, ToID_t>>;
+        using ParentVariant_t = Seq::As_t<std::variant, Seq::Map_t<Seq::Map_t<Signatures_t, ToEntity_t>, ToID_t>>;
     };
 
     struct EntityManagerConfig_t
     {
-        using base = Seq::ConvertTo_t<BaseEntityContainer_t, EntSignatures_t>;
+        using base = Seq::As_t<BaseEntityContainer_t, EntSignatures_t>;
         template<class T> using entity_type = Entity_t<EntityConfig_t<T>>;
     };
 
@@ -68,14 +68,14 @@ private:
     template<class SysSig_t, class EntID_t, class Callback_t> constexpr static auto
     ProcessEntity(EntID_t eid, Callback_t cb, auto& ecs_man) -> void
     {
-        using EntSig_t = typename EntID_t::value_type::Signature_t;
-        using Cmps_t   = typename SysSig_t::type;
+        using EntSig_t = Traits::Signature_t<EntID_t>;
+        using Cmps_t   = Traits::Components_t<SysSig_t>;
         Handle_t<EntSig_t> ent_handle { eid };
-        if constexpr (IsSystemCallable_v<Callback_t, Cmps_t, Handle_t<EntSig_t>>) {
+        if constexpr (Traits::IsInvocable_v<Callback_t, Cmps_t, Handle_t<EntSig_t>>) {
             Seq::Unpacker_t<Cmps_t>::Call([&]<class... Ts>(auto fn) {
                         fn(ecs_man.template GetComponent<Ts>(ent_handle)..., ent_handle);
                     }, cb);
-        } else if constexpr (ConditionalIsSystemCallable_v<(Seq::Size_v<Cmps_t> > 1), Callback_t, Cmps_t>) {
+        } else if constexpr (Traits::ConditionalIsInvocable_v<(Seq::Size_v<Cmps_t> > 1), Callback_t, Cmps_t>) {
             Seq::Unpacker_t<Cmps_t>::Call([&]<class... Ts>(auto fn) {
                         fn(ecs_man.template GetComponent<Ts>(ent_handle)...);
                     }, cb);
@@ -120,11 +120,11 @@ public:
     CreateEntity(Args_t... args) -> Handle_t<EntSig_t>
     {
         using ArgsTypes_t           = TMPL::TypeList_t<Args_t...>;
-        using RequiredComponents_t  = ComponentsFrom_t<EntSig_t>;
-        using RemainingComponents_t = Seq::RemoveTypes_t<RequiredComponents_t, ArgsTypes_t>;
-        static_assert(Seq::IsUnique_v<ArgsTypes_t>, "Component arguments must be unique.");
-        static_assert(TMPL::IsSubsetOf_v<ArgsTypes_t, RequiredComponents_t>,
-                      "Components arguments does not match the requiered components");
+        using RequiredComponents_t  = Traits::Components_t<EntSig_t>;
+        using RemainingComponents_t = Seq::Difference_t<RequiredComponents_t, ArgsTypes_t>;
+        static_assert(Seq::IsSet_v<ArgsTypes_t>, "Component arguments must be unique.");
+        static_assert(Seq::IsSubsetOf_v<ArgsTypes_t, RequiredComponents_t>,
+                      "Components arguments does not match the entity components");
 
         auto cmp_ids { CreateComponents(RemainingComponents_t{}, args...) };
 
@@ -138,11 +138,11 @@ public:
         auto& ent { GetEntity(ent_id) };
         std::visit([&]<class T>(T eid) {
                     using Sign_t = typename T::value_type::Signature_t;
-                    if constexpr (not IsInstanceOf_v<Sign_t, EntSig_t>) {
-                        DestroyComponents(ComponentsFrom_t<Sign_t>{}, GetEntity(eid).GetComponentIDs());
+                    if constexpr (not Traits::IsInstanceOf_v<Sign_t, EntSig_t>) {
+                        DestroyComponents(Traits::Components_t<Sign_t>{}, GetEntity(eid).GetComponentIDs());
                         mEntityMan.template Destroy(eid);
                     } else {
-                        DestroyComponents(ComponentsFrom_t<EntSig_t>{}, ent.GetComponentIDs());
+                        DestroyComponents(Traits::Components_t<EntSig_t>{}, ent.GetComponentIDs());
                         mEntityMan.template Destroy(ent_id);
                     }
                 }, ent.GetParentID());
@@ -152,15 +152,15 @@ public:
     TransformTo(Handle_t<EntSig_t> ent_handle, Args_t... args) -> Handle_t<DestSig_t>
     {
         using SrcSig_t   = EntSig_t;
-        using DestCmps_t = ComponentsFrom_t<DestSig_t>;
-        using SrcCmps_t  = ComponentsFrom_t<SrcSig_t>;
-        using RmCmps_t   = Seq::RemoveTypes_t<SrcCmps_t, DestCmps_t>;
-        using MkCmps_t   = Seq::RemoveTypes_t<DestCmps_t, SrcCmps_t>;
+        using DestCmps_t = Traits::Components_t<DestSig_t>;
+        using SrcCmps_t  = Traits::Components_t<SrcSig_t>;
+        using RmCmps_t   = Seq::Difference_t<SrcCmps_t, DestCmps_t>;
+        using MkCmps_t   = Seq::Difference_t<DestCmps_t, SrcCmps_t>;
 
         using ArgsTypes = TMPL::TypeList_t<Args_t...>;
-        using RemainingComponents_t = Seq::RemoveTypes_t<MkCmps_t, ArgsTypes>;
-        static_assert(Seq::IsUnique_v<ArgsTypes>, "Component arguments must be unique.");
-        static_assert(TMPL::IsSubsetOf_v<ArgsTypes, MkCmps_t>,
+        using RemainingComponents_t = Seq::Difference_t<MkCmps_t, ArgsTypes>;
+        static_assert(Seq::IsSet_v<ArgsTypes>, "Component arguments must be unique.");
+        static_assert(Seq::IsSubsetOf_v<ArgsTypes, MkCmps_t>,
                       "Components arguments does not match the requiered components");
         EntityID_t<EntSig_t> ent_id { ent_handle.GetIndex() };
         auto old_ids { GetEntity(ent_id).GetComponentIDs() };
@@ -181,8 +181,8 @@ public:
     RemoveBase(EntID_t ent_id) -> void
     {
         using SrcSig_t = typename EntID_t::type;
-        using NewSig_t = Seq::RemoveTypes_t<SrcSig_t, TMPL::TypeList_t<BaseSig_t>>;
-        static_assert(IsInstanceOf_v<SrcSig_t, BaseSig_t>, "Not base from ent.");
+        using NewSig_t = Seq::Difference_t<SrcSig_t, TMPL::TypeList_t<BaseSig_t>>;
+        static_assert(Traits::IsInstanceOf_v<SrcSig_t, BaseSig_t>, "Not base from ent.");
     }
 
     template<class Base_t, class EntSig_t> constexpr auto
@@ -195,7 +195,7 @@ public:
     template<class Cmpt_t, class EntSig_t> constexpr auto
     GetComponent(Handle_t<EntSig_t> ent_handle) const -> const Cmpt_t&
     {
-        static_assert(TMPL::IsOneOf_v<Cmpt_t, ComponentsFrom_t<EntSig_t>>,
+        static_assert(Seq::Contains_v<Cmpt_t, Traits::Components_t<EntSig_t>>,
                       "This entity doesn't have this component");
         auto ent_id { EntityID_t<EntSig_t>{ ent_handle.GetIndex() } };
         auto& ent { GetEntity(ent_id) };
@@ -224,6 +224,8 @@ public:
     template<class Cmpt_t, class EntSig_t> constexpr auto
     GetComponentID(Handle_t<EntSig_t> ent_handle) const -> auto
     {
+        static_assert(Seq::Contains_v<Cmpt_t, Traits::Components_t<EntSig_t>>,
+                      "This entity doesn't have this component");
         return GetEntity(EntityID_t<EntSig_t>{ ent_handle.GetIndex() }).template GetComponentID<Cmpt_t>();
     }
 
@@ -286,7 +288,7 @@ public:
     {
         auto ent_id { EntityID_t<EntSig_t>{ ent_handle.GetIndex() } };
         std::visit([&]<class T>(T eid) {
-                    if constexpr (IsInstanceOf_v<SysSig_t, typename T::value_type::Signature_t>) {
+                    if constexpr (Traits::IsInstanceOf_v<SysSig_t, Traits::Signature_t<T>>) {
                         ProcessEntity<SysSig_t>(eid, cb, *this);
                     }
                 }, GetEntity(ent_id).GetParentID());
@@ -297,7 +299,7 @@ public:
     {
         auto ent_id { EntityID_t<EntSig_t>{ ent_handle.GetIndex() } };
         std::visit([&]<class T>(T eid) {
-                    if constexpr (IsInstanceOf_v<SysSig_t, typename T::value_type::Signature_t>) {
+                    if constexpr (Traits::IsInstanceOf_v<SysSig_t, Traits::Signature_t<T>>) {
                         ProcessEntity<SysSig_t>(eid, cb, *this);
                     }
                 }, GetEntity(ent_id).GetParentID());

@@ -113,7 +113,7 @@ protected:
     template<class Type_t>
     constexpr static auto CheckIfTypeExists() -> void
     {
-        static_assert(TMPL::IsOneOf_v<Type_t, TMPL::TypeList_t<Ts...>>,
+        static_assert(TMPL::Sequence::Contains_v<Type_t, TMPL::TypeList_t<Ts...>>,
                       "The requiered type does not exists in this instance.");
     }
 };
