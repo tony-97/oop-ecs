@@ -2,7 +2,6 @@
 
 #include "class.hpp"
 #include "ecs_manager.hpp"
-#include "traits.hpp"
 
 struct RenderComponent_t
 {

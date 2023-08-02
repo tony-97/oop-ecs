@@ -25,32 +25,24 @@ public:
     template<class EntSig_t> constexpr auto
     Create(auto cmp_ids) -> auto
     {
-        using ReqEntity_t = entity_type<EntSig_t>;
-        auto id { Base_t::template emplace_back<ReqEntity_t>(cmp_ids).key() };
+        auto id { CreateParent<EntSig_t>(cmp_ids) };
         CreateBases(Traits::Bases_t<EntSig_t>{}, id, cmp_ids);
         return id;
     }
 
+    // only call on the parent entity id
     template<class EntID_t> constexpr auto 
     Destroy(EntID_t ent_id) -> void
     {
-        using Sign_t = Traits::Signature_t<EntID_t>; 
-        auto& ent { Base_t::template operator[]<Traits::Entity_t<EntID_t>>(ent_id) };
-
-        std::visit([&]<class T>(T eid) {
-                    if constexpr (not Traits::IsInstanceOf_v<Sign_t, Traits::Signature_t<T>>) {
-                        Destroy(eid);
-                    } else {
-                        DestroyBases(Traits::Bases_t<Traits::Signature_t<EntID_t>>{}, ent);
-                        (*this).template erase<Traits::Entity_t<EntID_t>>(ent_id);
-                    }
-                }, ent.GetParentID());
+        auto& ent { GetEntity(ent_id) };
+        DestroyBases(Traits::Bases_t<Traits::Signature_t<EntID_t>>{}, ent);
+        DestroyRaw(ent_id);
     }
 
     template<class DestSig_t, class EntID_t> constexpr auto
     TransformTo(EntID_t ent_id, auto cmp_ids) -> auto
     {
-        using SrcSig_t   = typename EntID_t::value_type::Signature_t;
+        using SrcSig_t = Traits::Signature_t<EntID_t>;
         using DestBs_t = Traits::Bases_t<DestSig_t>;
         using SrcBs_t  = Traits::Bases_t<SrcSig_t>;
         using RmBs_t   = TMPL::Sequence::Difference_t<SrcBs_t, DestBs_t>;
@@ -58,7 +50,7 @@ public:
         using MkBs_t   = TMPL::Sequence::Difference_t<DestBs_t, SrcBs_t>;
 
         auto& ent { GetEntity(ent_id) };
-        auto id { Base_t::template emplace_back<entity_type<DestSig_t>>(cmp_ids).key() };
+        auto id { CreateParent<DestSig_t>(cmp_ids) };
         // change the to the new parent
         TMPL::Sequence::ForEach_t<Bs_t>::Do([&]<class Base_t>() {
                     auto bid { ent.template GetBaseID<Base_t>() };
@@ -66,7 +58,7 @@ public:
                 });
         CreateBases(MkBs_t{}, id, cmp_ids, ent.GetBaseIDs());
         DestroyBases(RmBs_t{}, ent);
-        Base_t::template erase<entity_type<SrcSig_t>>(ent_id);
+        DestroyRaw(ent_id);
         return id;
     }
 
@@ -89,12 +81,39 @@ public:
         return base.get_key(pos);
     }
 
-
 private:
+    template<class EntID_t> constexpr auto
+    DestroyRaw(EntID_t eid) -> void
+    {
+        Base_t::template erase<Traits::Entity_t<EntID_t>>(eid);
+    }
+
+    template<class EntSig_t> constexpr auto
+    CreateRawEntity(auto... args) -> auto&
+    {
+        using ReqEntity_t = entity_type<EntSig_t>;
+        return Base_t::template emplace_back<ReqEntity_t>(args...);
+    }
+
+    template<class EntSig_t> constexpr auto
+    CreateBase(auto cmp_ids, auto parent_id) -> auto
+    {
+        return CreateRawEntity<EntSig_t>(cmp_ids, parent_id).key();
+    }
+
+    template<class EntSig_t> constexpr auto
+    CreateParent(auto cmp_ids) -> auto
+    {
+        auto& slot { CreateRawEntity<EntSig_t>(cmp_ids) };
+        slot.value().SetParentID(slot.key());
+
+        return slot.key();
+    }
+
     template<template<class...> class TList_t, class... Bases_t, class Tp = std::tuple<>> constexpr auto
     CreateBases(TList_t<Bases_t...>, [[maybe_unused]] auto parent_id, [[maybe_unused]] auto cmp_ids, Tp bases = {}) -> auto
     {
-        std::tuple ids { Base_t::template emplace_back<entity_type<Bases_t>>(cmp_ids, parent_id).key()... };
+        std::tuple ids { CreateBase<Bases_t>(cmp_ids, parent_id)... };
         auto bases_ids { std::tuple_cat(ids, bases) };
         (GetEntity(std::get<EntityID_t<Bases_t>>(ids)).SetBasesIDs(bases_ids), ...);
         GetEntity(parent_id).SetBasesIDs(bases_ids);
@@ -103,7 +122,7 @@ private:
     template<template<class...> class TList_t, class... Bases_t> constexpr auto
     DestroyBases(TList_t<Bases_t...>, auto& ent) -> void
     {
-        (Base_t::template erase<entity_type<Bases_t>>(ent.template GetBaseID<Bases_t>()), ...);
+        (DestroyRaw(ent.template GetBaseID<Bases_t>()), ...);
     }
 
     using Base_t::operator[];

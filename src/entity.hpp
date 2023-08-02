@@ -21,7 +21,7 @@ public:
     using BasesIDs_t      = typename Config_t::BasesIDs_t;
     using ParentVariant_t = typename Config_t::ParentVariant_t;
 
-    template<class T> using EntityID_t  = ID_t<Entity_t<typename Config_t::template Self_t<T>>>;
+    template<class T> using EntityID_t = ID_t<Entity_t<typename Config_t::template Self_t<T>>>;
 
     template<class ParentID_t = EntityID_t<Signature_t>>
     constexpr explicit Entity_t(auto cmp_ids, ParentID_t parent_id = {})

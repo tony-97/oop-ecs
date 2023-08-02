@@ -5,6 +5,8 @@
 
 #include <type_traits>
 
+#include "type_aliases.hpp"
+
 namespace ECS
 {
 
@@ -12,7 +14,7 @@ namespace Seq = TMPL::Sequence;
 
 namespace Traits {
 
-template <class T, class = void> struct IsClass                                 : std::false_type {};
+template <class T, class = void> struct IsClass                                    : std::false_type {};
 template <class T>               struct IsClass<T, std::void_t<typename T::types>> : std::true_type  {};
 
 template<class T> constexpr static inline auto IsClass_v { IsClass<T>::value };
@@ -74,6 +76,10 @@ struct Components
 template<class... Ts> using Components_t = typename Components<Ts...>::type;
 
 template<class Fn_t, class... Args_t> struct IsInvocable;
+
+template<class Fn_t, class Sig_t>
+struct IsInvocable<Fn_t, Handle_t<Sig_t>>
+    : std::is_invocable<Fn_t, Handle_t<Sig_t>> {  };
 
 template<class Fn_t, template<class...> class Sig_t, class...Sigs_t, class EntIdx_t>
 struct IsInvocable<Fn_t, Sig_t<Sigs_t...>, EntIdx_t>

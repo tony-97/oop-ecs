@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs_map.hpp"
+
 #include <cstddef>
 
 namespace ECS
