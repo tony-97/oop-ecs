@@ -17,12 +17,6 @@ private:
 public:
     using type = T;
 
-    template<class CID_t, class = typename CID_t::value_type>
-    constexpr Handle_t<CID_t::value_type>(CID_t cid) : mIndex{ cid } {  }
-
-    //template<class EID_t, class = typename EID_t::value_type::Signature_t>
-    //constexpr Handle_t<EID_t::value_type::Signature_t>(EID_t eid) : mIndex{ eid } {  }
-
     constexpr Handle_t(std::size_t index) : mIndex { index } {  }
 
     constexpr std::size_t GetIndex() const { return mIndex; }
@@ -30,5 +24,11 @@ public:
     template<class U>
     constexpr operator U() { return static_cast<U>(mIndex); }
 };
+
+template<class CID_t>
+Handle_t(CID_t) -> Handle_t<typename CID_t::value_type>;
+
+template<class EID_t>
+Handle_t(EID_t) -> Handle_t<typename EID_t::value_type::Signature_t>;
 
 } // namespace ECS

@@ -57,7 +57,8 @@ int main()
     ecs_man.CreateEntity<BasicCharacter_t>(RenderComponent_t{ 'd' }, PositionComponent_t{ 6, 2 }, PhysicsComponent_t{ 1, 1 });
     
     ECS::ID_t<RenderComponent_t> cid { 4 };
-    ECS::Handle_t h { cid };
+    ECS::Handle_t h1 { cid };
+    ECS::Handle_t h2 { e };
 
     std::cout << "Iterating over renderables..." << std::endl;
     ecs_man.ForEach<Renderable_t>(rendereable_printer);
