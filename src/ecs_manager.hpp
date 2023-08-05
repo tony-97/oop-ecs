@@ -77,7 +77,7 @@ private:
         if constexpr (std::is_same_v<SysSig_t, EntSig_t>) {
             ent_handle = EntHandle{ eid };
         } else {
-            ent_handle = ecs_man.template GetBase<SysSig_t>(eid);
+            ent_handle = ecs_man.template GetBase<SysSig_t>(Handle_t<EntSig_t>{ eid });
         }
         if constexpr (Traits::IsInvocable_v<Callback_t, Cmps_t, EntHandle>) {
             Seq::Unpacker_t<Cmps_t>::Call([&]<class... Ts>(auto fn) {
@@ -90,6 +90,34 @@ private:
         } else if constexpr (Traits::IsInvocable_v<Callback_t, EntHandle>) {
             cb(ent_handle);
         }
+    }
+
+    template<class SysSig_t, class EntSig_t> constexpr static auto
+    MatchEntity(Handle_t<EntSig_t> ent_handle, auto cb, auto& ecs_man) -> void
+    {
+        if constexpr (Traits::IsInstanceOf_v<SysSig_t, EntSig_t>) {
+            ProcessEntity<SysSig_t>(EntityID_t<EntSig_t>{ ent_handle }, cb, ecs_man);
+            return;
+        }
+        std::visit([&]<class T>(T eid) {
+                    if constexpr (Traits::IsInstanceOf_v<SysSig_t, Traits::Signature_t<T>>) {
+                        ProcessEntity<SysSig_t>(eid, cb, ecs_man);
+                    }
+                }, ecs_man.GetEntity(EntityID_t<EntSig_t>{ ent_handle }).GetParentID());
+    }
+
+    template<class EntSig_t> constexpr static auto
+    MatchEntity(auto& ecs_man, Handle_t<EntSig_t> ent_handle, auto... cbs) -> void
+    {
+        std::visit([&]<class T>(T eid) {
+                    overloaded fn{ cbs... };
+                    ProcessEntity<Traits::Signature_t<T>>(eid, fn, ecs_man);
+                    Seq::ForEach_t<Traits::Bases_t<T>>::Do(
+                        [&]<class Bs_t>(){
+                            auto bs { ecs_man.GetEntity(eid).template GetBase<Bs_t>() };
+                            ProcessEntity<Bs_t>(bs, fn, ecs_man);
+                        });
+                }, ecs_man.GetEntity(EntityID_t<EntSig_t>{ ent_handle }).GetParentID());
     }
 
     template<class EntSig_t> constexpr static auto
@@ -274,13 +302,13 @@ public:
     }
 
     template<class EntSig_t> constexpr auto 
-    ASYNCForEach(auto cb) -> void
+    ParallelForEach(auto cb) -> void
     {
         TraverseEntities<EntSig_t>(std::execution::par_unseq, cb, *this);
     }
 
     template<class EntSig_t> constexpr auto 
-    ASYNCForEach(auto cb) const -> void
+    ParallelForEach(auto cb) const -> void
     {
         TraverseEntities<EntSig_t>(std::execution::par_unseq, cb, *this);
     }
@@ -288,55 +316,35 @@ public:
     template<class SysSig_t, class EntSig_t> constexpr auto
     Match(Handle_t<EntSig_t> ent_handle, auto cb) const -> void
     {
-        std::visit([&]<class T>(T eid) {
-                    if constexpr (Traits::IsInstanceOf_v<SysSig_t, Traits::Signature_t<T>>) {
-                        ProcessEntity<SysSig_t>(eid, cb, *this);
-                    }
-                }, GetEntity(EntityID_t<EntSig_t>{ ent_handle }).GetParentID());
+        MatchEntity<SysSig_t>(ent_handle, cb, *this);
     }
 
     template<class SysSig_t, class EntSig_t> constexpr auto
     Match(Handle_t<EntSig_t> ent_handle, auto cb) -> void
     {
-        std::visit([&]<class T>(T eid) {
-                    if constexpr (Traits::IsInstanceOf_v<SysSig_t, Traits::Signature_t<T>>) {
-                        ProcessEntity<SysSig_t>(eid, cb, *this);
-                    }
-                }, GetEntity(EntityID_t<EntSig_t>{ ent_handle }).GetParentID());
+        MatchEntity<SysSig_t>(ent_handle, cb, *this);
     }
 
     template<class EntSig_t> constexpr auto
     Match(Handle_t<EntSig_t> ent_handle, auto... cbs) const -> void
     {
-        std::visit([&]<class T>(T eid) {
-                    Seq::ForEach_t<Traits::Bases_t<T>>::Do(
-                        [&]<class Bs_t>(){
-                            auto bs { GetEntity(eid).template GetBase<Bs_t>() };
-                            ProcessEntity<Bs_t>(bs, overloaded{ cbs... }, *this);
-                        });
-                }, GetEntity(EntityID_t<EntSig_t>{ ent_handle }).GetParentID());
+        MatchEntity(*this, ent_handle, cbs...);
     }
 
     template<class EntSig_t> constexpr auto
     Match(Handle_t<EntSig_t> ent_handle, auto... cbs) -> void
     {
-        std::visit([&]<class T>(T eid) {
-                    Seq::ForEach_t<Traits::Bases_t<Traits::Signature_t<T>>>::Do(
-                        [&]<class Bs_t>(){
-                            auto bs { GetEntity(eid).template GetBaseID<Bs_t>() };
-                            ProcessEntity<Bs_t>(bs, overloaded{ cbs... }, *this);
-                        });
-                }, GetEntity(EntityID_t<EntSig_t>{ ent_handle }).GetParentID());
+        MatchEntity(*this, ent_handle, cbs...);
     }
 
     template<class Sign_t> constexpr auto
-    Size() const -> std::uintmax_t
+    Size() const -> std::size_t
     {
         return mEntityMan.template size<entity_type<Sign_t>>();
     }
 
     constexpr auto
-    Size() const -> std::uintmax_t
+    SizeAll() const -> std::uintmax_t
     {
         return Seq::Unpacker_t<EntSignatures_t>::Call([&]<class... Signs_t>() {
                     return (Size<Signs_t>() + ...);

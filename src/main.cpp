@@ -2,6 +2,7 @@
 
 #include "class.hpp"
 #include "ecs_manager.hpp"
+#include "type_aliases.hpp"
 
 struct RenderComponent_t
 {
@@ -50,11 +51,14 @@ struct ECSConfig_t
 int main()
 {
     ECS::ECSManager_t<ECSConfig_t> ecs_man {  };
-    ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'a' });
+    auto e = ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'a' });
     ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'b' }, PositionComponent_t{ 1, 2 });
     ecs_man.CreateEntity<Movable_t>(PositionComponent_t{ 2, 2 }, PhysicsComponent_t{ 3, 4 });
     ecs_man.CreateEntity<BasicCharacter_t>(RenderComponent_t{ 'd' }, PositionComponent_t{ 6, 2 }, PhysicsComponent_t{ 1, 1 });
     
+    ECS::ID_t<RenderComponent_t> cid { 4 };
+    ECS::Handle_t h { cid };
+
     std::cout << "Iterating over renderables..." << std::endl;
     ecs_man.ForEach<Renderable_t>(rendereable_printer);
     
