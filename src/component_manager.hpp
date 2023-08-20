@@ -9,8 +9,8 @@ template<class Config_t>
 struct ComponentManager_t final : Config_t::base, Uncopyable_t
 {
 public:
-    using Self_t         = ComponentManager_t;
-    using Base_t         = typename Config_t::base;
+    using Self_t = ComponentManager_t;
+    using Base_t = typename Config_t::base;
 
     constexpr explicit ComponentManager_t() : Base_t{  } {  }
 

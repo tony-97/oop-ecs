@@ -51,14 +51,14 @@ struct ECSConfig_t
 int main()
 {
     ECS::ECSManager_t<ECSConfig_t> ecs_man {  };
-    auto e = ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'a' });
+    ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'a' });
     ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'b' }, PositionComponent_t{ 1, 2 });
     ecs_man.CreateEntity<Movable_t>(PositionComponent_t{ 2, 2 }, PhysicsComponent_t{ 3, 4 });
     ecs_man.CreateEntity<BasicCharacter_t>(RenderComponent_t{ 'd' }, PositionComponent_t{ 6, 2 }, PhysicsComponent_t{ 1, 1 });
-    
+    ECS::ECSManager_t<ECSConfig_t>::EntityID_t<Renderable_t> eid { 3 };
     ECS::ID_t<RenderComponent_t> cid { 4 };
     ECS::Handle_t h1 { cid };
-    ECS::Handle_t h2 { e };
+    ECS::Handle_t h2 { eid };
 
     std::cout << "Iterating over renderables..." << std::endl;
     ecs_man.ForEach<Renderable_t>(rendereable_printer);
@@ -84,9 +84,9 @@ int main()
     ecs_man.ForEach<BasicCharacter_t>(basic_character_printer);
     
     std::cout << "Converting back basic character..." << std::endl;
-    ecs_man.ForEach<Movable_t>([&](auto& phy, auto&){
+    ecs_man.ForEach<Movable_t>([&](auto& phy, auto&, auto e){
                 if (phy.vx == 5 && phy.vy == 4) {
-                    //ecs_man.TransformTo<BasicCharacter_t>(ent, RenderComponent_t{ 'd' });
+                    ecs_man.TransformTo<BasicCharacter_t>(e, RenderComponent_t{ 'd' });
                 }
             });
     
