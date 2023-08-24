@@ -1,6 +1,7 @@
 #pragma once
 
 #include "helpers.hpp"
+#include "type_aliases.hpp"
 
 namespace ECS
 {
@@ -14,30 +15,28 @@ public:
 
     constexpr explicit ComponentManager_t() : Base_t{  } {  }
 
-    template<class ReqCmpt_t> constexpr auto
-    Create(ReqCmpt_t cmp) -> auto
+    template<class Cmp_t> constexpr auto
+    Create(Cmp_t cmp) -> auto
     {
-        return Base_t::template emplace_back<ReqCmpt_t>(cmp).key();
+        return Handle_t{ Base_t::template emplace_back<Cmp_t>(cmp).key() };
     }
 
-    template<class CmpID_t> constexpr auto
-    Destroy(CmpID_t cmp_id) -> void
+    template<class Cmp_t> constexpr auto
+    Destroy(Handle_t<Cmp_t> cmp) -> void
     {
-        Base_t::template erase<typename CmpID_t::value_type>(cmp_id);
+        Base_t::template erase<Cmp_t>(ID_t<Cmp_t>{ cmp });
     }
 
-    template<class CmpID_t> constexpr auto
-    GetComponent(CmpID_t cmp_id) const -> const auto&
+    template<class Cmp_t> constexpr auto
+    GetComponent(Handle_t<Cmp_t> cmp) const -> const auto&
     {
-        using Component_t = typename CmpID_t::value_type;
-        return Base_t::template operator[]<Component_t>(cmp_id);
+        return Base_t::template operator[]<Cmp_t>(ID_t<Cmp_t>{ cmp });
     }
 
-    template<class CmpID_t> constexpr auto
-    GetComponent(CmpID_t cmp_id) -> auto& 
+    template<class Cmp_t> constexpr auto
+    GetComponent(Handle_t<Cmp_t> cmp) -> auto& 
     {
-        using Component_t = typename CmpID_t::value_type;
-        return Base_t::template operator[]<Component_t>(cmp_id);
+        return Base_t::template operator[]<Cmp_t>(ID_t<Cmp_t>{ cmp });
     }
 
 private:

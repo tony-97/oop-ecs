@@ -2,6 +2,7 @@
 
 #include "class.hpp"
 #include "ecs_manager.hpp"
+#include "traits.hpp"
 #include "type_aliases.hpp"
 
 struct RenderComponent_t
@@ -48,17 +49,32 @@ struct ECSConfig_t
     using Signatures_t = TMPL::TypeList_t<Renderable_t, Movable_t, BasicCharacter_t>;
 };
 
+template<class T>
+void fn(ECS::Handle_t<T> e) {  }
+
 int main()
 {
     ECS::ECSManager_t<ECSConfig_t> ecs_man {  };
     ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'a' });
     ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'b' }, PositionComponent_t{ 1, 2 });
     ecs_man.CreateEntity<Movable_t>(PositionComponent_t{ 2, 2 }, PhysicsComponent_t{ 3, 4 });
-    ecs_man.CreateEntity<BasicCharacter_t>(RenderComponent_t{ 'd' }, PositionComponent_t{ 6, 2 }, PhysicsComponent_t{ 1, 1 });
+    auto basic_e = ecs_man.CreateEntity<BasicCharacter_t>(RenderComponent_t{ 'd' }, PositionComponent_t{ 6, 2 }, PhysicsComponent_t{ 1, 1 });
+    auto ren_e = ecs_man.GetBaseID<Renderable_t>(basic_e);
     ECS::ECSManager_t<ECSConfig_t>::EntityID_t<Renderable_t> eid { 3 };
     ECS::ID_t<RenderComponent_t> cid { 4 };
     ECS::Handle_t h1 { cid };
     ECS::Handle_t h2 { eid };
+
+    //fn(cid);
+
+    using v = ECS::ECSManager_t<ECSConfig_t>::entity_type<Renderable_t>::ParentVariant_t;
+    using v1 = ECS::Traits::Bases_t<ECS::Handle_t<Renderable_t>>;
+
+
+    ecs_man.Match(ren_e,
+            [&](ECS::Handle_t<BasicCharacter_t> e) {
+                
+            });
 
     std::cout << "Iterating over renderables..." << std::endl;
     ecs_man.ForEach<Renderable_t>(rendereable_printer);
@@ -98,5 +114,6 @@ int main()
     
     std::cout << "Iterating over basic characters..." << std::endl;
     ecs_man.ForEach<BasicCharacter_t>(basic_character_printer);
+    ecs_man.Destroy(ren_e);
     return 0;
 }
