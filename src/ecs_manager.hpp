@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <execution>
 #include <algorithm>
-#include <ranges>
+#include <variant>
 #include <type_traits>
 
 namespace ECS
@@ -67,7 +67,7 @@ public:
     using EntityID_t = typename EntityMan_t::template EntityID_t<T>;
 
     template<class SysSig_t, class EntSig_t, class Callback_t> constexpr static auto
-    ProcessEntity(Handle_t<EntSig_t> e, Callback_t cb, ECSManager_t& ecs_man) -> void
+    ProcessEntity(Handle_t<EntSig_t> e, Callback_t cb, auto& ecs_man) -> void
     {
         using Cmps_t    = Traits::Components_t<SysSig_t>;
         using EntHandle = std::conditional_t<std::is_same_v<SysSig_t, EntSig_t>, Handle_t<EntSig_t>, Handle_t<SysSig_t>>;
@@ -121,10 +121,8 @@ public:
     template<class EntSig_t> constexpr static auto
     TraverseEntities(auto policy, auto cb, auto& ecs_man) -> void
     {
-        auto size { ecs_man.mEntityMan.template size<entity_type<EntSig_t>>() };
-        std::ranges::iota_view indexes { decltype(size){ 0 }, size };
-        std::for_each(policy, std::make_reverse_iterator(indexes.end()), std::make_reverse_iterator(indexes.begin()), [&](auto i) {
-                    ProcessEntity<EntSig_t>(ecs_man.mEntityMan.template GetHandle<EntSig_t>(i), cb, ecs_man);
+        std::for_each(policy, ecs_man.mEntityMan.template rbegin<entity_type<EntSig_t>>(), ecs_man.mEntityMan.template rend<entity_type<EntSig_t>>(), [&](auto& slot) {
+                    ProcessEntity<EntSig_t>(Handle_t{ slot.key() }, cb, ecs_man);
                 });
     }
 

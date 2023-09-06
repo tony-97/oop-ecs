@@ -61,6 +61,11 @@ struct ECSMap_t
 
     constexpr explicit ECSMap_t() = default;
 
+    constexpr auto push_back(const T& value) -> void
+    {
+        emplace_back(std::move(value));
+    }
+
     template<class... Args_t> [[nodiscard]] constexpr auto
     emplace_back(Args_t&&... args) -> reference
     {
@@ -92,11 +97,22 @@ struct ECSMap_t
         mFreeIndex = key.mIndex;
     }
 
+    constexpr auto clear() -> void
+    {
+        mFreeIndex = mLastIndex = 0;
+        mData.clear();
+    }
+
     constexpr auto size() const -> size_type { return mLastIndex; }
 
     constexpr auto erase(const_iterator it) -> void
     {
         erase(it->key());
+    }
+
+    constexpr auto next_key() const -> Key_t
+    {
+        return { mFreeIndex };
     }
 
     constexpr auto get_key(size_type pos) const -> Key_t
