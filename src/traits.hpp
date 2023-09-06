@@ -106,21 +106,24 @@ struct ConditionalIsInvocable<false, Fn_t, Args_t...> : std::false_type {  };
 template <bool Enable, class Fn_t, class... Args_t>
 constexpr bool ConditionalIsInvocable_v = ConditionalIsInvocable<Enable, Fn_t, Args_t...>::value;
 
-template <class Sign1_t, class Sign2_t, class... Ts>
+template <class Sign1_t, class Sign2_t>
 struct IsInstanceOf;
 
+template <class Sign1_t, class Sign2_t, class... Ts>
+struct IsInstanceOfIMPL;
+
 template <class Sign1_t, template <class...> class Sig2_t, class... Ts>
-struct IsInstanceOf<Sign1_t, Sig2_t<Ts...>>
+struct IsInstanceOfIMPL<Sign1_t, Sig2_t<Ts...>>
     : std::disjunction<
-        std::is_same<Sign1_t, Ts>..., IsInstanceOf<Sign1_t, Class_t<Ts>>...
+        std::is_same<Sign1_t, Ts>..., IsInstanceOf<Sign1_t, Ts>...
       > {};
 
 template <class Sign1_t, class Sign2_t>
-struct IsInstanceOf<Sign1_t, Sign2_t>
+struct IsInstanceOf
     : std::disjunction<
         std::is_same<Sign1_t, Sign2_t>,
         std::conditional_t<IsClass_v<Sign2_t>,
-            IsInstanceOf<Sign1_t, Class_t<Sign2_t>>, std::false_type>
+            IsInstanceOfIMPL<Sign1_t, Class_t<Sign2_t>>, std::false_type>
       > {};
 
 template<class Sign1_t, class Sign2_t>
