@@ -58,7 +58,7 @@ public:
 
 private:
     template<template<class...> class TList_t, class... Cmps_t>
-    constexpr explicit Entity_t(TList_t<Cmps_t...>, auto cmp_ids, auto parent_id)
+    constexpr explicit Entity_t(TList_t<Cmps_t...>, [[maybe_unused]] auto cmp_ids, auto parent_id)
         : mComponentIDs{ std::get<Handle_t<Cmps_t>>(cmp_ids)... }, mParent { parent_id } {  }
 
     ComponentIDs_t  mComponentIDs {  };
