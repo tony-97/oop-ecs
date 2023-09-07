@@ -54,12 +54,13 @@ SameAsConstMemFunc(This_t* obj,
 
 struct Uncopyable_t
 {
-    Uncopyable_t() = default;
+    constexpr Uncopyable_t() = default;
+    ~Uncopyable_t() = default;
 
-    Uncopyable_t(Uncopyable_t&&)                 = delete;
-    Uncopyable_t(const Uncopyable_t&)            = delete;
-    Uncopyable_t& operator=(Uncopyable_t&&)      = delete;
-    Uncopyable_t& operator=(const Uncopyable_t&) = delete;
+    constexpr Uncopyable_t(Uncopyable_t&&)                 = delete;
+    constexpr Uncopyable_t(const Uncopyable_t&)            = delete;
+    constexpr auto operator=(Uncopyable_t&&)      -> Uncopyable_t& = delete;
+    constexpr auto operator=(const Uncopyable_t&) -> Uncopyable_t& = delete;
 };
 ///////////////////////////////////////////////////////////////////////////////
 // lambda overloaded

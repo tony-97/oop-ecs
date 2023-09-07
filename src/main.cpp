@@ -7,7 +7,7 @@
 
 struct RenderComponent_t
 {
-    char c;
+    char c {  };
     ~RenderComponent_t() { std::cout << "Dtor. called\n"; }
 };
 
@@ -52,7 +52,7 @@ struct ECSConfig_t
 template<class T>
 void fn(ECS::Handle_t<T> e) {  }
 
-int main()
+auto main() -> int
 {
     ECS::ECSManager_t<ECSConfig_t> ecs_man {  };
     ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'a' });

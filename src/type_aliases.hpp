@@ -27,11 +27,11 @@ public:
     template<class U, class = std::enable_if_t<!std::is_same_v<T, U>>>
     constexpr Handle_t(Handle_t<U>) = delete;
 
-    constexpr Handle_t() : mIndex {  } {  }
+    constexpr Handle_t() = default;
 
     constexpr Handle_t(std::size_t index) : mIndex { index } {  }
 
-    constexpr std::size_t GetIndex() const { return mIndex; }
+    [[nodiscard]] constexpr auto GetIndex() const -> std::size_t  { return mIndex; }
 
     template<class U>
     constexpr operator U() { return static_cast<U>(mIndex); }

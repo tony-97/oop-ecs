@@ -30,7 +30,7 @@ struct ECSMap_t
 
         friend ECSMap_t;
 
-        constexpr Key_t() {  };
+        constexpr Key_t() = default;
         constexpr Key_t(size_type index) : mIndex { index } {  };
 
         constexpr auto GetIndex() const -> size_type { return mIndex; }
@@ -49,14 +49,14 @@ struct ECSMap_t
         size_type mEraseIndex {  };
         size_type mIndex {  };
     public:
-        template<class... Args_t> constexpr
+        template<class... Args_t> constexpr explicit
         Slot_t(Args_t&&... args)
             : mValue { std::forward<Args_t>(args)... } {  }
 
-              T& value()       { return mValue; }
-        const T& value() const { return mValue; }
+        constexpr auto value()       -> T&       { return mValue; }
+        constexpr auto value() const -> const T& { return mValue; }
 
-        Key_t key() const { return { mEraseIndex }; }
+        constexpr auto key() const -> Key_t { return { mEraseIndex }; }
     };
 
     constexpr explicit ECSMap_t() = default;

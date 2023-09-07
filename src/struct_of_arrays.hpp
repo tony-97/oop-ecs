@@ -41,7 +41,7 @@ public:
     template<class T> constexpr auto data()       -> pointer<T>       { return GetRequiredContainer<T>().data(); }
     template<class T> constexpr auto data() const -> const_pointer<T> { return GetRequiredContainer<T>().data(); }
 
-    template<class T> constexpr auto empty   () const -> bool         { return GetRequiredContainer<T>().empty();    }
+    template<class T> [[nodiscard]] constexpr auto empty   () const -> bool         { return GetRequiredContainer<T>().empty();    }
     template<class T> constexpr auto size    () const -> size_type<T> { return GetRequiredContainer<T>().size();     }
     template<class T> constexpr auto max_size() const -> size_type<T> { return GetRequiredContainer<T>().max_size(); }
     template<class T> constexpr auto capacity() const -> size_type<T> { return GetRequiredContainer<T>().capacity(); }
@@ -74,32 +74,32 @@ public:
 
     template<class T> constexpr auto static get_container_index() -> size_type<T> { return TMPL::IndexOf_v<T, Ts...>; }
 
-    template<class T> constexpr auto begin () const -> const_iterator<T> { return GetRequiredContainer<T>().begin(); }
-    template<class T> constexpr auto cbegin() const -> const_iterator<T> { return GetRequiredContainer<T>().cbegin(); }
-    template<class T> constexpr auto begin ()       -> iterator<T>       { return GetRequiredContainer<T>().begin(); }
-
-    template<class T> constexpr auto rbegin () const -> const_reverse_iterator<T> { return GetRequiredContainer<T>().rbegin();  }
-    template<class T> constexpr auto crbegin() const -> const_reverse_iterator<T> { return GetRequiredContainer<T>().crbegin(); }
-    template<class T> constexpr auto rbegin ()       -> reverse_iterator<T>       { return GetRequiredContainer<T>().rbegin();  }
-
-    template<class T> constexpr auto end () const -> const_iterator<T> { return GetRequiredContainer<T>().end();  }
-    template<class T> constexpr auto cend() const -> const_iterator<T> { return GetRequiredContainer<T>().cend(); }
-    template<class T> constexpr auto end ()       -> iterator<T>       { return GetRequiredContainer<T>().end();  }
-
-    template<class T> constexpr auto rend () const -> const_reverse_iterator<T> { return GetRequiredContainer<T>().rend(); }
-    template<class T> constexpr auto crend() const -> const_reverse_iterator<T> { return GetRequiredContainer<T>().crend(); }
-    template<class T> constexpr auto rend ()       -> reverse_iterator<T>       { return GetRequiredContainer<T>().rend(); }
+    template<class T> [[nodiscard]] constexpr auto begin () const -> const_iterator<T> { return GetRequiredContainer<T>().begin(); }
+    template<class T> [[nodiscard]] constexpr auto cbegin() const -> const_iterator<T> { return GetRequiredContainer<T>().cbegin(); }
+    template<class T> [[nodiscard]] constexpr auto begin ()       -> iterator<T>       { return GetRequiredContainer<T>().begin(); }
+                                    
+    template<class T> [[nodiscard]] constexpr auto rbegin () const -> const_reverse_iterator<T> { return GetRequiredContainer<T>().rbegin();  }
+    template<class T> [[nodiscard]] constexpr auto crbegin() const -> const_reverse_iterator<T> { return GetRequiredContainer<T>().crbegin(); }
+    template<class T> [[nodiscard]] constexpr auto rbegin ()       -> reverse_iterator<T>       { return GetRequiredContainer<T>().rbegin();  }
+                                    
+    template<class T> [[nodiscard]] constexpr auto end () const -> const_iterator<T> { return GetRequiredContainer<T>().end();  }
+    template<class T> [[nodiscard]] constexpr auto cend() const -> const_iterator<T> { return GetRequiredContainer<T>().cend(); }
+    template<class T> [[nodiscard]] constexpr auto end ()       -> iterator<T>       { return GetRequiredContainer<T>().end();  }
+                                    
+    template<class T> [[nodiscard]] constexpr auto rend () const -> const_reverse_iterator<T> { return GetRequiredContainer<T>().rend(); }
+    template<class T> [[nodiscard]] constexpr auto crend() const -> const_reverse_iterator<T> { return GetRequiredContainer<T>().crend(); }
+    template<class T> [[nodiscard]] constexpr auto rend ()       -> reverse_iterator<T>       { return GetRequiredContainer<T>().rend(); }
 
 protected:
 
-    template<class RequiredType_t> constexpr auto
+    template<class RequiredType_t> [[nodiscard]] constexpr auto
     GetRequiredContainer() const -> const Container_t<RequiredType_t>&
     {
         CheckIfTypeExists<RequiredType_t>();
         return static_cast<const Container_t<RequiredType_t>&>(*this);
     }
 
-    template<class RequiredType_t> constexpr auto
+    template<class RequiredType_t> [[nodiscard]] constexpr auto
     GetRequiredContainer() -> Container_t<RequiredType_t>&
     {
         return SameAsConstMemFunc(this, &SoA_t::GetRequiredContainer<RequiredType_t>);
