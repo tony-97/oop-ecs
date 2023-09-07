@@ -3,7 +3,7 @@ Checks:          'clang-diagnostic-*,clang-analyzer-*,clang-analyzer-*,bugprone-
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
-FormatStyle:     none
+FormatStyle:     'file'
 User:            tony
 CheckOptions:
   hicpp-move-const-arg.CheckMoveToConstRef: 'true'
