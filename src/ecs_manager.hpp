@@ -59,13 +59,13 @@ private:
 
     using ComponentMan_t = ComponentManager_t<ComponentManagerConfig_t>;
     using EntityMan_t    = EntityManager_t<EntityManagerConfig_t>;
-
+public:
     template<class T>
     using entity_type = typename EntityMan_t::template entity_type<T>;
 
     template<class T>
     using EntityID_t = typename EntityMan_t::template EntityID_t<T>;
-
+private:
     template<class SysSig_t, class EntSig_t, class Callback_t> constexpr static auto
     ProcessEntity(Handle_t<EntSig_t> e, Callback_t cb, auto& ecs_man) -> void
     {
@@ -127,15 +127,15 @@ private:
     }
 
     template<class Cmpt_t> constexpr auto
-    CreateComponent(Cmpt_t cmp) -> auto
+    CreateComponent(Cmpt_t&& cmp) -> auto
     {
-        return mComponentMan.template Create<Cmpt_t>(cmp);
+        return mComponentMan.template Create<Cmpt_t>(std::forward<Cmpt_t>(cmp));
     }
 
-    template<template<class...> class TList_t, class... Cmps_t> constexpr auto
-    CreateComponents(TList_t<Cmps_t...>, auto... cmps) -> auto
+    template<template<class...> class TList_t, class... Default_t, class... Cmps_t> constexpr auto
+    CreateComponents(TList_t<Default_t...>, Cmps_t&&... cmps) -> auto
     {
-       return std::tuple { CreateComponent(cmps)..., CreateComponent(Cmps_t{})... };
+       return std::tuple { CreateComponent(std::forward<Cmps_t>(cmps))..., CreateComponent(Default_t{})... };
     }
 
     template<template<class...> class TList_t, class... Cmps_t> constexpr auto
@@ -146,16 +146,16 @@ private:
 
 public:
     template<class EntSig_t, class... Args_t> constexpr auto
-    CreateEntity(Args_t... args) -> Handle_t<EntSig_t>
+    CreateEntity(Args_t&&... args) -> Handle_t<EntSig_t>
     {
-        using ArgsTypes_t           = TMPL::TypeList_t<Args_t...>;
+        using ArgsTypes_t           = TMPL::TypeList_t<std::remove_cvref_t<Args_t>...>;
         using RequiredComponents_t  = Traits::Components_t<EntSig_t>;
         using RemainingComponents_t = Seq::Difference_t<RequiredComponents_t, ArgsTypes_t>;
         static_assert(Seq::IsSet_v<ArgsTypes_t>, "Component arguments must be unique.");
         static_assert(Seq::IsSubsetOf_v<ArgsTypes_t, RequiredComponents_t>,
                       "Components arguments does not match the entity components");
 
-        auto cmp_ids { CreateComponents(RemainingComponents_t{}, args...) };
+        auto cmp_ids { CreateComponents(RemainingComponents_t{}, std::forward<Args_t>(args)...) };
 
         return { mEntityMan.template Create<EntSig_t>(cmp_ids) };
     }
@@ -170,7 +170,7 @@ public:
     }
 
     template<class DestSig_t, class EntSig_t, class... Args_t> constexpr auto
-    TransformTo(Handle_t<EntSig_t> e, Args_t... args) -> Handle_t<DestSig_t>
+    TransformTo(Handle_t<EntSig_t> e, Args_t&&... args) -> Handle_t<DestSig_t>
     {
         using SrcSig_t   = EntSig_t;
         using DestCmps_t = Traits::Components_t<DestSig_t>;
@@ -178,14 +178,14 @@ public:
         using RmCmps_t   = Seq::Difference_t<SrcCmps_t, DestCmps_t>;
         using MkCmps_t   = Seq::Difference_t<DestCmps_t, SrcCmps_t>;
 
-        using ArgsTypes = TMPL::TypeList_t<Args_t...>;
+        using ArgsTypes = TMPL::TypeList_t<std::remove_cvref_t<Args_t>...>;
         using RemainingComponents_t = Seq::Difference_t<MkCmps_t, ArgsTypes>;
         static_assert(Seq::IsSet_v<ArgsTypes>, "Component arguments must be unique.");
         static_assert(Seq::IsSubsetOf_v<ArgsTypes, MkCmps_t>,
                       "Components arguments does not match the requiered components");
         const auto& ent { mEntityMan.GetEntity(e) };
         auto old_ids { ent.GetComponentIDs() };
-        auto new_ids { CreateComponents(RemainingComponents_t{}, args...) };
+        auto new_ids { CreateComponents(RemainingComponents_t{}, std::forward<Args_t>(args)...) };
         auto ids { std::tuple_cat(new_ids, old_ids) };
         DestroyComponents(RmCmps_t{}, ent);
         return { mEntityMan.template TransformTo<DestSig_t>(e, ids) };

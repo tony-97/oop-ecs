@@ -16,9 +16,9 @@ public:
     constexpr explicit ComponentManager_t() : Base_t{  } {  }
 
     template<class Cmp_t> constexpr auto
-    Create(Cmp_t cmp) -> auto
+    Create(Cmp_t&& cmp) -> auto
     {
-        return Handle_t{ Base_t::template emplace_back<Cmp_t>(cmp).key() };
+        return Handle_t{ Base_t::template emplace_back<Cmp_t>(std::forward<Cmp_t>(cmp)).key() };
     }
 
     template<class Cmp_t> constexpr auto
