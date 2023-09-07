@@ -27,12 +27,12 @@ public:
     constexpr explicit Entity_t(auto cmp_ids, ParentID_t parent_id = { })
     : Entity_t(Components_t{}, cmp_ids, parent_id) {  }
 
-    constexpr explicit Entity_t(Entity_t&& other)
+    constexpr Entity_t(Entity_t&& other) noexcept
         : mComponentIDs { std::move(other.mComponentIDs) },
           mBases        { std::move(other.mBases)        },
           mParent       { std::move(other.mParent)       } {  }
 
-    constexpr auto operator=(Entity_t&& other) -> Entity_t&
+    constexpr auto operator=(Entity_t&& other) noexcept -> Entity_t&
     {
         mComponentIDs = std::move(other.mComponentIDs);
         mBases        = std::move(other.mBases);

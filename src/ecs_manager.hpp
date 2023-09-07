@@ -18,7 +18,7 @@ namespace ECS
 template<class Config_t>
 struct ECSManager_t : Uncopyable_t
 {
-public:
+private:
     template<class Sign_t> struct EntityConfig_t;
 
     template<class... Ts> using BaseComponentContainer_t = SoA_t<ECSMap_t, Ts...>;
@@ -27,7 +27,7 @@ public:
     using EntitySignatures_t = typename Config_t::Signatures_t;
     using ComponentList_t = Seq::As_t<Traits::Components_t, EntitySignatures_t>;
 
-    template<class T> using ToID_t     = std::type_identity<Handle_t<T>>;
+    template<class T> using ToID_t = std::type_identity<Handle_t<T>>;
 
     struct ComponentManagerConfig_t
     {
