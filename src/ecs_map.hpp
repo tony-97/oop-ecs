@@ -61,7 +61,7 @@ template<class T> struct ECSMap_t
 
     constexpr auto value() const -> const T& { return mValue; }
 
-    constexpr auto key() const -> Key_t { return { mEraseIndex }; }
+    constexpr auto key() const -> ECSMap_t::Key_t { return { mEraseIndex }; }
   };
 
   constexpr explicit ECSMap_t() = default;
@@ -84,7 +84,7 @@ template<class T> struct ECSMap_t
     return mData[mLastIndex++];
   }
 
-  constexpr auto erase(Key_t key) -> void
+  constexpr auto erase(ECSMap_t::Key_t key) -> void
   {
     --mLastIndex;
     if (mData[key.mIndex].mIndex != mLastIndex) {
@@ -112,13 +112,13 @@ template<class T> struct ECSMap_t
 
   constexpr auto get_key(size_type pos) const -> Key_t { return { mData[pos].mEraseIndex }; }
 
-  constexpr auto operator[](Key_t key) -> T& { return mData[mData[key.mIndex].mIndex].mValue; }
+  constexpr auto operator[](ECSMap_t::Key_t key) -> T& { return mData[mData[key.mIndex].mIndex].mValue; }
 
-  constexpr auto operator[](Key_t key) const -> const T& { return mData[mData[key.mIndex].mIndex].mValue; }
+  constexpr auto operator[](ECSMap_t::Key_t key) const -> const T& { return mData[mData[key.mIndex].mIndex].mValue; }
 
-  constexpr auto operator[](size_type pos) -> T& { return mData[pos].mValue; }
+  // constexpr auto operator[](size_type pos) -> T& { return mData[pos].mValue; }
 
-  constexpr auto operator[](size_type pos) const -> const T& { return mData[pos].mValue; }
+  // constexpr auto operator[](size_type pos) const -> const T& { return mData[pos].mValue; }
 
   constexpr auto begin() -> iterator { return mData.begin(); }
 
