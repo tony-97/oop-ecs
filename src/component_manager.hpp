@@ -21,7 +21,7 @@ public:
 
   template<class Cmp_t> constexpr auto Create(Cmp_t&& cmp) -> auto
   {
-    return Handle_t{ Base_t::template emplace_back<Cmp_t>(std::forward<Cmp_t>(cmp)).key() };
+    return Handle_t{ Base_t::template emplace_back<std::remove_cvref_t<Cmp_t>>(std::forward<Cmp_t>(cmp)).key() };
   }
 
   template<class Cmp_t> constexpr auto Destroy(Handle_t<Cmp_t> cmp) -> void
