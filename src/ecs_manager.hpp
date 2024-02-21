@@ -113,7 +113,7 @@ private:
       ecs_man.mEntityMan.GetEntity(e).GetParentID());
   }
 
-  template<class EntSig_t> constexpr static auto TraverseEntities(auto policy, auto cb, auto& ecs_man) -> void
+  template<class EntSig_t> constexpr static auto TraverseEntities(auto&& policy, auto cb, auto& ecs_man) -> void
   {
     std::for_each(policy,
                   ecs_man.mEntityMan.template rbegin<entity_type<EntSig_t>>(),
