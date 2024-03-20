@@ -1,5 +1,5 @@
 [submodule "external/tmpl"]
-	path = src/tmpl
+	path = oop-ecs/tmpl
 	url = ../tmpl
 [submodule "external/makefile"]
 	path = external/makefile
