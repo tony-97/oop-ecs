@@ -26,17 +26,17 @@ public:
 
   template<class Cmp_t> constexpr auto Destroy(Handle_t<Cmp_t> cmp) -> void
   {
-    Base_t::template erase<Cmp_t>(ID_t<Cmp_t>{ cmp });
+    Base_t::template erase<Cmp_t>(ID_t<Cmp_t>{ cmp.GetIndex() });
   }
 
   template<class Cmp_t> constexpr auto GetComponent(Handle_t<Cmp_t> cmp) const -> const auto&
   {
-    return Base_t::template operator[]<Cmp_t>(ID_t<Cmp_t>{ cmp });
+    return Base_t::template operator[]<Cmp_t>(ID_t<Cmp_t>{ cmp.GetIndex() });
   }
 
   template<class Cmp_t> constexpr auto GetComponent(Handle_t<Cmp_t> cmp) -> auto&
   {
-    return Base_t::template operator[]<Cmp_t>(ID_t<Cmp_t>{ cmp });
+    return Base_t::template operator[]<Cmp_t>(ID_t<Cmp_t>{ cmp.GetIndex() });
   }
 
 private:

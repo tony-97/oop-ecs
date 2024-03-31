@@ -63,12 +63,6 @@ struct ECSConfig_t
   using Signatures_t = TMPL::TypeList_t<Renderable_t, Movable_t, BasicCharacter_t>;
 };
 
-template<class T>
-void
-fn(ECS::Handle_t<T> e)
-{
-}
-
 auto
 main() -> int
 {
@@ -78,16 +72,7 @@ main() -> int
   ecs_man.CreateEntity<Movable_t>(PositionComponent_t{ 2, 2 }, PhysicsComponent_t{ 3, 4 });
   auto basic_e = ecs_man.CreateEntity<BasicCharacter_t>(
     RenderComponent_t{ 'd' }, PositionComponent_t{ 6, 2 }, PhysicsComponent_t{ 1, 1 });
-  auto                                                     ren_e = ecs_man.GetBaseID<Renderable_t>(basic_e);
-  ECS::ECSManager_t<ECSConfig_t>::EntityID_t<Renderable_t> eid{ 3 };
-  ECS::ID_t<RenderComponent_t>                             cid{ 4 };
-  ECS::Handle_t                                            h1{ cid };
-  ECS::Handle_t                                            h2{ eid };
-
-  // fn(cid);
-
-  using v  = ECS::ECSManager_t<ECSConfig_t>::entity_type<Renderable_t>::ParentVariant_t;
-  using v1 = ECS::Traits::Bases_t<ECS::Handle_t<Renderable_t>>;
+  auto ren_e = ecs_man.GetBaseID<Renderable_t>(basic_e);
 
   ecs_man.Match(ren_e, [&](ECS::Handle_t<BasicCharacter_t> e) {
 

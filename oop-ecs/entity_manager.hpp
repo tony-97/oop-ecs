@@ -63,12 +63,12 @@ public:
 
   template<class EntSig_t> constexpr auto GetEntity(Handle_t<EntSig_t> e) const -> const auto&
   {
-    return Base_t::template operator[]<entity_type<EntSig_t>>(EntityID_t<EntSig_t>{ e });
+    return Base_t::template operator[]<entity_type<EntSig_t>>(EntityID_t<EntSig_t>{ e.GetIndex() });
   }
 
   template<class EntSig_t> constexpr auto GetEntity(Handle_t<EntSig_t> e) -> auto&
   {
-    return Base_t::template operator[]<entity_type<EntSig_t>>(EntityID_t<EntSig_t>{ e });
+    return Base_t::template operator[]<entity_type<EntSig_t>>(EntityID_t<EntSig_t>{ e.GetIndex() });
   }
 
   template<class EntSig_t> constexpr auto GetHandle(size_t pos) const -> auto
@@ -80,7 +80,7 @@ public:
 private:
   template<class EntSig_t> constexpr auto DestroyRaw(Handle_t<EntSig_t> e) -> void
   {
-    Base_t::template erase<entity_type<EntSig_t>>(EntityID_t<EntSig_t>{ e });
+    Base_t::template erase<entity_type<EntSig_t>>(EntityID_t<EntSig_t>{ e.GetIndex() });
   }
 
   template<class EntSig_t> constexpr auto CreateRawEntity(auto... args) -> auto&

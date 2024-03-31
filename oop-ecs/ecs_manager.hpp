@@ -158,7 +158,7 @@ public:
     std::visit(
       [&]<class T>(T eid) {
         DestroyComponents(Traits::Components_t<typename T::type>{}, mEntityMan.GetEntity(eid));
-        mEntityMan.template Destroy(eid);
+        mEntityMan.Destroy(eid);
       },
       mEntityMan.GetEntity(e).GetParentID());
   }
