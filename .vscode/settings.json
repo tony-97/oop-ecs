@@ -1,6 +1,5 @@
 {
   "makefile.makefilePath": "vscode.mk",
-  "makefile.configureOnOpen": true,
   "makefile.configurations": [
     {
       "name": "Debug",
