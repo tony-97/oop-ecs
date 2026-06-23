@@ -1,0 +1,15 @@
+{
+  "configurations": [
+    {
+      "name": "Makefile-Driven",
+      "includePath": [],
+      "defines": [],
+      "compilerPath": "",
+      "cStandard": "c23",
+      "cppStandard": "c++20",
+      "intelliSenseMode": "${default}",
+      "configurationProvider": "ms-vscode.makefile-tools"
+    }
+  ],
+  "version": 4
+}
