@@ -21,7 +21,7 @@ endif
 
 export
 
-.PHONY: all run run_cgdb info clean cleanall
+.PHONY: run run_cgdb info clean cleanall
 
 all:
 	$(MAKE) -f Makefile.options all
