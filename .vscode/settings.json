@@ -10,15 +10,16 @@
       "makeArgs": ["BUILD_MODE=RELEASE"]
     }
   ],
+  "makefile.compileCommandsPath": "./compile_commands.json",
   "makefile.launchConfigurations": [
     {
-      "cwd": "${workspaceFolder}\\build\\debug",
-      "binaryPath": "${workspaceFolder}\\build\\debug\\ecs.exe",
+      "cwd": "${workspaceFolder}/build/debug",
+      "binaryPath": "${workspaceFolder}/build/debug/ecs.exe",
       "binaryArgs": []
     },
     {
-      "cwd": "${workspaceFolder}\\build\\release",
-      "binaryPath": "${workspaceFolder}\\build\\release\\ecs.exe",
+      "cwd": "${workspaceFolder}/build/release",
+      "binaryPath": "${workspaceFolder}/build/release/ecs.exe",
       "binaryArgs": []
     }
   ]
