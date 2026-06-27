@@ -23,14 +23,27 @@ endif
 EXEC_NAME := app
 LIB_NAME := mylib
 
-SRC_DIR        ?= src
+SRC_DIR        ?= oop-ecs
 EXTRA_SRCS_CXX ?=
 EXTRA_SRCS_C   ?=
 EXCLUDE_SRCS   ?=
 
-INCLUDE_DIRS +=
+INCLUDE_DIRS += $(SRC_DIR)
 LIBS_PATH    +=
 DEFINES      +=
+
+# Compilation flags
+ifndef MSVC
+    LDFLAGS  += -flto
+    LDLIBS   +=
+    DEBUG_FLAGS   += -g -ggdb -O0
+    RELEASE_FLAGS += -march=native -Ofast -flto
+    WFLAGS   += -Weffc++ -Wpadded
+    CXXFLAGS += -std=c++20 -fno-rtti -fno-exceptions
+else
+    WFLAGS += /wd5026 /wd5027 /wd4626 /wd4625 /wd4668 /wd4820
+    CXXFLAGS += /std:c++20 /EHsc
+endif
 
 #==============================================================================
 # BUILD-ONLY section — everything below only applies when building the
@@ -76,50 +89,50 @@ ifeq ($(TARGET),ANDROID)
 endif
 ifeq ($(TARGET),WINDOWS)
 ifdef MSVC
-    LDLIBS   := 
-    LDFLAGS  := 
-    DEBUG_FLAGS   := 
-    RELEASE_FLAGS := 
-    WFLAGS   := 
-    CPPFLAGS := 
-    CXXFLAGS := 
-    CFLAGS   := 
+    LDLIBS   += 
+    LDFLAGS  += 
+    DEBUG_FLAGS   += 
+    RELEASE_FLAGS += 
+    WFLAGS   += 
+    CPPFLAGS += 
+    CXXFLAGS += 
+    CFLAGS   += 
 else
-    LDLIBS   := 
-    LDFLAGS  := 
-    DEBUG_FLAGS   := -g -ggdb -O0
-    RELEASE_FLAGS := -march=native -Ofast -s -DNDEBUG
-    WFLAGS   := 
-    CPPFLAGS := 
-    CXXFLAGS := 
-    CFLAGS   := 
+    LDLIBS   += 
+    LDFLAGS  += 
+    DEBUG_FLAGS   +=
+    RELEASE_FLAGS +=
+    WFLAGS   += 
+    CPPFLAGS += 
+    CXXFLAGS += 
+    CFLAGS   += 
 endif
 endif
 ifeq ($(TARGET),LINUX)
-    LDLIBS   := 
-    LDFLAGS  := 
-    DEBUG_FLAGS   := -g -ggdb -O0
-    RELEASE_FLAGS := -march=native -Ofast -s -DNDEBUG
-    WFLAGS   := 
-    CPPFLAGS := 
-    CXXFLAGS := 
-    CFLAGS   := 
+    LDLIBS   += 
+    LDFLAGS  += 
+    DEBUG_FLAGS   +=
+    RELEASE_FLAGS +=
+    WFLAGS   += 
+    CPPFLAGS += 
+    CXXFLAGS += 
+    CFLAGS   += 
 endif
 ifeq ($(TARGET),OSX)
-    LDLIBS   := 
-    LDFLAGS  := 
-    DEBUG_FLAGS   := 
-    RELEASE_FLAGS := 
-    WFLAGS   := 
-    CPPFLAGS := 
-    CXXFLAGS := 
-    CFLAGS   := 
+    LDLIBS   += 
+    LDFLAGS  += 
+    DEBUG_FLAGS   += 
+    RELEASE_FLAGS += 
+    WFLAGS   += 
+    CPPFLAGS += 
+    CXXFLAGS += 
+    CFLAGS   += 
 endif
 # Add more targets
 
 export
 
-.PHONY: all lib run run_cgdb info clean cleanall build-libs clean-libs cleanall-libs info-libs
+.PHONY: all lib run run_valgrind run_cgdb info clean cleanall build-libs clean-libs cleanall-libs info-libs
 
 all:
 	@$(MAKE) -f Makefile.rules all
@@ -144,9 +157,6 @@ info-libs:
 
 info:
 	@$(MAKE) -f Makefile.rules info
-
-info-libs:
-	@$(MAKE) -f Makefile.rules info-libs
 
 clean:
 	@$(MAKE) -f Makefile.rules clean

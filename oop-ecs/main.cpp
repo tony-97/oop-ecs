@@ -1,9 +1,9 @@
-#include <iostream>
-
 #include "class.hpp"
 #include "ecs_manager.hpp"
 #include "traits.hpp"
 #include "type_aliases.hpp"
+
+#include <iostream>
 
 struct RenderComponent_t
 {
@@ -70,9 +70,10 @@ main() -> int
   ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'a' });
   ecs_man.CreateEntity<Renderable_t>(RenderComponent_t{ 'b' }, PositionComponent_t{ 1, 2 });
   ecs_man.CreateEntity<Movable_t>(PositionComponent_t{ 2, 2 }, PhysicsComponent_t{ 3, 4 });
-  auto basic_e = ecs_man.CreateEntity<BasicCharacter_t>(
-    RenderComponent_t{ 'd' }, PositionComponent_t{ 6, 2 }, PhysicsComponent_t{ 1, 1 });
-  auto ren_e = ecs_man.GetBaseID<Renderable_t>(basic_e);
+  auto basic_e = ecs_man.CreateEntity<BasicCharacter_t>(RenderComponent_t{ 'd' },
+                                                        PositionComponent_t{ 6, 2 },
+                                                        PhysicsComponent_t{ 1, 1 });
+  auto ren_e   = ecs_man.GetBaseID<Renderable_t>(basic_e);
 
   ecs_man.Match(ren_e, [&](ECS::Handle_t<BasicCharacter_t> e) {
 
@@ -114,6 +115,6 @@ main() -> int
 
   std::cout << "Iterating over basic characters..." << std::endl;
   ecs_man.ForEach<BasicCharacter_t>(basic_character_printer);
-  ecs_man.Destroy(ren_e);
+  // ecs_man.Destroy(ren_e); // ren_e doesnt exist anymore
   return 0;
 }
