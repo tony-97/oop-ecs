@@ -119,7 +119,7 @@ endif
 
 export
 
-.PHONY: all lib run run_cgdb info clean cleanall build-libs clean-libs cleanall-libs info-libs
+.PHONY: all lib run run_valgrind run_cgdb info clean cleanall build-libs clean-libs cleanall-libs info-libs
 
 all:
 	@$(MAKE) -f Makefile.rules all
@@ -139,11 +139,11 @@ run_cgdb:
 build-libs:
 	@$(MAKE) -f Makefile.rules build-libs
 
-info:
-	@$(MAKE) -f Makefile.rules info
-
 info-libs:
 	@$(MAKE) -f Makefile.rules info-libs
+
+info:
+	@$(MAKE) -f Makefile.rules info
 
 clean:
 	@$(MAKE) -f Makefile.rules clean
