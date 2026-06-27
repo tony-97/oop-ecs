@@ -1,6 +1,6 @@
-export TARGET = LINUX
-export CXX = g++
-export CC  = gcc
+export TARGET = WINDOWS
+export CXX = cl
+export CC  = cl
 
 # Windows Compiler Variations
 all:
