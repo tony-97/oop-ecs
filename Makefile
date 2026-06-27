@@ -76,44 +76,44 @@ ifeq ($(TARGET),ANDROID)
 endif
 ifeq ($(TARGET),WINDOWS)
 ifdef MSVC
-    LDLIBS   := 
-    LDFLAGS  := 
-    DEBUG_FLAGS   := 
-    RELEASE_FLAGS := 
-    WFLAGS   := 
-    CPPFLAGS := 
-    CXXFLAGS := 
-    CFLAGS   := 
+    LDLIBS   += 
+    LDFLAGS  += 
+    DEBUG_FLAGS   += 
+    RELEASE_FLAGS += 
+    WFLAGS   += 
+    CPPFLAGS += 
+    CXXFLAGS += 
+    CFLAGS   += 
 else
-    LDLIBS   := 
-    LDFLAGS  := 
-    DEBUG_FLAGS   := -g -ggdb -O0
-    RELEASE_FLAGS := -march=native -Ofast -s -DNDEBUG
-    WFLAGS   := 
-    CPPFLAGS := 
-    CXXFLAGS := 
-    CFLAGS   := 
+    LDLIBS   += 
+    LDFLAGS  += 
+    DEBUG_FLAGS   += -g -ggdb -O0
+    RELEASE_FLAGS += -march=native -Ofast -s -DNDEBUG
+    WFLAGS   += 
+    CPPFLAGS += 
+    CXXFLAGS += 
+    CFLAGS   += 
 endif
 endif
 ifeq ($(TARGET),LINUX)
-    LDLIBS   := 
-    LDFLAGS  := 
-    DEBUG_FLAGS   := -g -ggdb -O0
-    RELEASE_FLAGS := -march=native -Ofast -s -DNDEBUG
-    WFLAGS   := 
-    CPPFLAGS := 
-    CXXFLAGS := 
-    CFLAGS   := 
+    LDLIBS   += 
+    LDFLAGS  += 
+    DEBUG_FLAGS   += -g -ggdb -O0
+    RELEASE_FLAGS += -march=native -Ofast -s -DNDEBUG
+    WFLAGS   += 
+    CPPFLAGS += 
+    CXXFLAGS += 
+    CFLAGS   += 
 endif
 ifeq ($(TARGET),OSX)
-    LDLIBS   := 
-    LDFLAGS  := 
-    DEBUG_FLAGS   := 
-    RELEASE_FLAGS := 
-    WFLAGS   := 
-    CPPFLAGS := 
-    CXXFLAGS := 
-    CFLAGS   := 
+    LDLIBS   += 
+    LDFLAGS  += 
+    DEBUG_FLAGS   += 
+    RELEASE_FLAGS += 
+    WFLAGS   += 
+    CPPFLAGS += 
+    CXXFLAGS += 
+    CFLAGS   += 
 endif
 # Add more targets
 
@@ -138,9 +138,6 @@ run_cgdb:
 
 build-libs:
 	@$(MAKE) -f Makefile.rules build-libs
-
-info-libs:
-	@$(MAKE) -f Makefile.rules info-libs
 
 info:
 	@$(MAKE) -f Makefile.rules info
