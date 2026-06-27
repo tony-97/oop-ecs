@@ -1,9 +1,8 @@
-#include "class.hpp"
-#include "ecs_manager.hpp"
-#include "traits.hpp"
-#include "type_aliases.hpp"
-
+#include <class.hpp>
+#include <ecs_manager.hpp>
 #include <iostream>
+#include <traits.hpp>
+#include <type_aliases.hpp>
 
 struct RenderComponent_t
 {

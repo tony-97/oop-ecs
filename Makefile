@@ -23,12 +23,12 @@ endif
 EXEC_NAME := app
 LIB_NAME := mylib
 
-SRC_DIR        ?= oop-ecs
+SRC_DIR        ?= ./examples
 EXTRA_SRCS_CXX ?=
 EXTRA_SRCS_C   ?=
 EXCLUDE_SRCS   ?=
 
-INCLUDE_DIRS += $(SRC_DIR)
+INCLUDE_DIRS += ./oop-ecs
 LIBS_PATH    +=
 DEFINES      +=
 
