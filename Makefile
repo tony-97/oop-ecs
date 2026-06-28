@@ -20,6 +20,12 @@ ifneq ($(_INCLUDED_AS_CONFIG),)
 include Makefile.vars
 endif
 
+#==============================================================================
+# BUILD-ONLY section — everything below only applies when building the
+# lib itself, not when included by the root Makefile for consumer config.
+#==============================================================================
+ifneq ($(_INCLUDED_AS_CONFIG),)
+
 EXEC_NAME := app
 LIB_NAME := mylib
 
@@ -44,12 +50,6 @@ else
     WFLAGS += /wd5026 /wd5027 /wd4626 /wd4625 /wd4668 /wd4820
     CXXFLAGS += /std:c++20 /EHsc
 endif
-
-#==============================================================================
-# BUILD-ONLY section — everything below only applies when building the
-# lib itself, not when included by the root Makefile for consumer config.
-#==============================================================================
-ifneq ($(_INCLUDED_AS_CONFIG),)
 
 # Compilation flags
 ifeq ($(TARGET),WEB)
