@@ -34,7 +34,7 @@ EXTRA_SRCS_CXX ?=
 EXTRA_SRCS_C   ?=
 EXCLUDE_SRCS   ?=
 
-INCLUDE_DIRS += ./oop-ecs
+INCLUDE_DIRS += ./oop-ecs ./external
 LIBS_PATH    +=
 DEFINES      +=
 
