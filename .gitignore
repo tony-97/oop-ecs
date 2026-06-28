@@ -1,5 +1,5 @@
 /a.out
-/build
+/build*
 /obj
 /app
 /compile_commands.json
