@@ -16,10 +16,10 @@ template<class T, std::size_t Capacity> struct BufferArray_t : Uncopyable_t
 
   constexpr auto getMemoryAt(std::size_t index) const -> const T*
   {
-    return reinterpret_cast<const T*>(mBuffer[index * sizeof(T)]);
+    return reinterpret_cast<const T*>(&mBuffer[index * sizeof(T)]);
   }
 
-  constexpr auto getMemoryAt(std::size_t index) -> auto* { ECS::SameAsConstMemFunc(*this, &getMemoryAt, index); }
+  constexpr auto getMemoryAt(std::size_t index) -> auto* { return ECS::SameAsConstMemFunc(*this, &BufferArray_t::getMemoryAt, index); }
 };
 
 template<class EntitySig_t, class... Cmps_t> struct Chunk_t : Uncopyable_t
