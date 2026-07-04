@@ -1,6 +1,7 @@
 #pragma once
 
 #include <tmpl/sequence.hpp>
+#include <type_traits>
 
 namespace ECS {
 
@@ -86,7 +87,11 @@ public:
 
   template<class T> constexpr auto push_back(const T& value) -> void { GetRequiredContainer<T>().push_back(value); }
 
-  template<class T> constexpr auto push_back(T&& value) -> void { GetRequiredContainer<T>().push_back(value); }
+  template<class T, std::enable_if_t<!std::is_lvalue_reference_v<T>, bool> = true>
+  constexpr auto push_back(T&& value) -> void
+  {
+    GetRequiredContainer<T>().push_back(std::move(value));
+  }
 
   template<class T, class... Args_t> constexpr auto emplace_back(Args_t&&... args) -> decltype(auto)
   {
