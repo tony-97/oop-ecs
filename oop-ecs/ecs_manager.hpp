@@ -74,7 +74,8 @@ private:
     }
     if constexpr (Traits::IsInvocable_v<Callback_t, Cmps_t, EntHandle>) {
       Seq::Unpacker_t<Cmps_t>::Call(
-        [&]<class... Ts>(auto fn) { fn(ecs_man.template GetComponent<Ts>(ent_handle)..., ent_handle); }, cb);
+        [&]<class... Ts>(auto fn) { fn(ecs_man.template GetComponent<Ts>(ent_handle)..., ent_handle); },
+        cb);
     } else if constexpr (Traits::ConditionalIsInvocable_v<(Seq::Size_v<Cmps_t> > 1), Callback_t, Cmps_t>) {
       Seq::Unpacker_t<Cmps_t>::Call([&]<class... Ts>(auto fn) { fn(ecs_man.template GetComponent<Ts>(ent_handle)...); },
                                     cb);
@@ -111,6 +112,13 @@ private:
         });
       },
       ecs_man.mEntityMan.GetEntity(e).GetParentID());
+  }
+
+  template<class EntSig_t> constexpr static auto TraverseEntitiesSeq(auto cb, auto& ecs_man) -> void
+  {
+    std::for_each(ecs_man.mEntityMan.template rbegin<entity_type<EntSig_t>>(),
+                  ecs_man.mEntityMan.template rend<entity_type<EntSig_t>>(),
+                  [&](auto& slot) { ProcessEntity<EntSig_t>(Handle_t{ slot.key() }, cb, ecs_man); });
   }
 
   template<class EntSig_t> constexpr static auto TraverseEntities(auto&& policy, auto cb, auto& ecs_man) -> void
@@ -261,22 +269,38 @@ public:
 
   template<class EntSig_t> constexpr auto ForEach(auto cb) const -> void
   {
+#if defined(__ANDROID__)
+    TraverseEntitiesSeq<EntSig_t>(cb, *this);
+#else
     TraverseEntities<EntSig_t>(std::execution::seq, cb, *this);
+#endif
   }
 
   template<class EntSig_t> constexpr auto ForEach(auto cb) -> void
   {
+#if defined(__ANDROID__)
+    TraverseEntitiesSeq<EntSig_t>(cb, *this);
+#else
     TraverseEntities<EntSig_t>(std::execution::seq, cb, *this);
+#endif
   }
 
   template<class EntSig_t> constexpr auto ParallelForEach(auto cb) -> void
   {
+#if defined(__ANDROID__)
+    TraverseEntitiesSeq<EntSig_t>(cb, *this);
+#else
     TraverseEntities<EntSig_t>(std::execution::par_unseq, cb, *this);
+#endif
   }
 
   template<class EntSig_t> constexpr auto ParallelForEach(auto cb) const -> void
   {
+#if defined(__ANDROID__)
+    TraverseEntitiesSeq<EntSig_t>(cb, *this);
+#else
     TraverseEntities<EntSig_t>(std::execution::par_unseq, cb, *this);
+#endif
   }
 
   template<class SysSig_t, class EntSig_t> constexpr auto Match(Handle_t<EntSig_t> ent_handle, auto cb) const -> void
